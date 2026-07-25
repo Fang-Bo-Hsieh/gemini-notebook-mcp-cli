@@ -1117,7 +1117,7 @@ def _is_notebooklm_url(url: str) -> bool:
         host = (urlparse(url).hostname or "").lower()
     except Exception:
         return False
-    return host in {"notebooklm.google.com", "notebooklm.cloud.google.com"}
+    return host in {"notebooklm.google.com", "notebook.google.com", "notebooklm.cloud.google.com"}
 
 
 def is_logged_in(url: str) -> bool:
@@ -1439,6 +1439,7 @@ def extract_cookies_from_page(
     session_id = extract_session_id(html)
     email = extract_email(html)
     build_label = extract_build_label(html)
+    base_host = urlparse(current_url).hostname or ""
 
     return {
         "cookies": cookies,
@@ -1446,6 +1447,7 @@ def extract_cookies_from_page(
         "session_id": session_id,
         "email": email,
         "build_label": build_label,
+        "base_host": base_host,
     }
 
 
@@ -1638,12 +1640,14 @@ def run_headless_auth(
         # html already fetched by _wait_for_page_ready
         csrf_token = extract_csrf_token(html)
         session_id = extract_session_id(html)
+        base_host = urlparse(current_url).hostname or ""
 
         # Create and save tokens
         tokens = AuthTokens(
             cookies=cookies_list,
             csrf_token=csrf_token or "",
             session_id=session_id or "",
+            base_host=base_host,
             extracted_at=time.time(),
         )
         save_tokens_to_cache(tokens)

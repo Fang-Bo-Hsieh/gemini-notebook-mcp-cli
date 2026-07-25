@@ -157,6 +157,18 @@ For MCP server configuration, pass the variable in your client config:
 
 ---
 
+## The "Gemini Notebook" rebrand (`notebook.google.com`)
+
+Google is rolling out a rebrand of NotebookLM that redirects some signed-in accounts to `notebook.google.com` instead of `notebooklm.google.com`. This is handled automatically as of v0.9.3: `nlm login` records whichever host your account actually lands on (per-profile, in `metadata.json`), and every CLI/MCP request is routed to that host afterward. No configuration is needed.
+
+Resolution order, if you need to override it manually:
+
+1. `NOTEBOOKLM_BASE_URL` env var, if set (see Enterprise section above).
+2. The host your account last signed in on (auto-detected).
+3. The default `https://notebooklm.google.com`.
+
+---
+
 ## Method 2: File Mode
 
 This method lets you manually extract and provide cookies. Use this if:

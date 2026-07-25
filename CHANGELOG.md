@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.3] - 2026-07-25
+
+### Fixed
+- **Support Google's "Gemini Notebook" rebrand at `notebook.google.com` (#269)** — Google is rolling out a rebrand of NotebookLM that redirects some signed-in accounts from `notebooklm.google.com` to `notebook.google.com`. Previously this broke every auth path for migrated accounts: `nlm login` timed out because sign-in detection only recognized the old host; API calls failed because the httpx client always targeted `notebooklm.google.com` regardless of where the account actually landed; and the `NOTEBOOKLM_BASE_URL` escape hatch rejected the new host outright.
+  - `notebook.google.com` is now a recognized NotebookLM host for login detection (`is_logged_in`) and for `NOTEBOOKLM_BASE_URL`.
+  - The CLI now records which host a signed-in session actually landed on (`base_host`, persisted per-profile in `metadata.json`) and every client construction path — CLI, MCP, chat sessions, and the `nlm doctor auth-replay` diagnostic — routes requests to that host automatically. No configuration is needed for migrated accounts; non-migrated accounts see no change, since the default host is still `notebooklm.google.com`.
+  - Precedence: `NOTEBOOKLM_BASE_URL` env var (if set) > the account's persisted `base_host` > the default host.
+  - Thanks to **@grergea** for the detailed report and reproduction steps!
+
 ## [0.9.2] - 2026-07-23
 
 ### Fixed

@@ -66,6 +66,7 @@ def get_client(profile: str | None = None) -> NotebookLMClient:
             csrf_token=p.csrf_token or "",
             session_id=p.session_id or "",
             build_label=p.build_label or "",
+            base_host=p.base_host or "",
         )
     except typer.Exit:
         raise

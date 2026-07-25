@@ -35,6 +35,13 @@ from notebooklm_tools.utils.cdp import _is_notebooklm_url, is_logged_in
         # Enterprise NotebookLM host.
         ("https://notebooklm.cloud.google.com/", True),
         ("https://notebooklm.cloud.google.com/notebook/abc", True),
+        # Google's "Gemini Notebook" rebrand host (issue #269).
+        ("https://notebook.google.com/", True),
+        ("https://notebook.google.com/notebook/abc", True),
+        (
+            "https://notebook.google.com/?original_referer=https%3A%2F%2Faccounts.google.com%23",
+            True,
+        ),
         # Standard Google sign-in redirect: not logged in.
         ("https://accounts.google.com/v3/signin/identifier?continue=...", False),
         ("https://accounts.google.com/", False),
@@ -58,6 +65,7 @@ def test_is_logged_in(url: str, expected: bool) -> None:
     [
         ("https://notebooklm.google.com/", True),
         ("https://notebooklm.cloud.google.com/notebook/abc", True),
+        ("https://notebook.google.com/", True),
         (
             "https://accounts.google.com/v3/signin/identifier"
             "?continue=https%3A%2F%2Fnotebooklm.google.com%2F",
