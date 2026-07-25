@@ -47,6 +47,7 @@ _ALLOWED_BASE_HOSTS = {
     "notebooklm.google.com",
     "notebook.google.com",
     "notebooklm.cloud.google.com",
+    "notebook.cloud.google.com",
 }
 
 

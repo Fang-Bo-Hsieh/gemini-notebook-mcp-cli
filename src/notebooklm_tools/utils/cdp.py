@@ -1117,7 +1117,12 @@ def _is_notebooklm_url(url: str) -> bool:
         host = (urlparse(url).hostname or "").lower()
     except Exception:
         return False
-    return host in {"notebooklm.google.com", "notebook.google.com", "notebooklm.cloud.google.com"}
+    return host in {
+        "notebooklm.google.com",
+        "notebook.google.com",
+        "notebooklm.cloud.google.com",
+        "notebook.cloud.google.com",
+    }
 
 
 def is_logged_in(url: str) -> bool:
@@ -1310,6 +1315,28 @@ def extract_cookies_via_cdp(
 
     if not debugger_url:
         startup_error = _summarize_browser_startup_failure(_chrome_process)
+        handed_off = (
+            not reused_existing
+            and _chrome_process is not None
+            and _chrome_process.poll() is not None
+        )
+        if handed_off:
+            # Chrome was already running under a different process, so the browser we
+            # launched handed off to it and exited immediately without ever binding the
+            # remote-debugging port.
+            hint = (
+                "Fully quit Chrome (all windows) and run 'nlm login' again. "
+                "If that doesn't help, use 'nlm login --manual' to import cookies from a file."
+            )
+            if startup_error:
+                hint = f"{hint} ({startup_error})"
+            raise AuthenticationError(
+                message=(
+                    "Chrome is already running, so the sign-in browser couldn't start "
+                    "with remote debugging."
+                ),
+                hint=hint,
+            )
         hint = "Use 'nlm login --manual' to import cookies from a file."
         if startup_error:
             hint = f"{hint} Browser startup error: {startup_error}"

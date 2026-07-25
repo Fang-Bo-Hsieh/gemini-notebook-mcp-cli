@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.4] - 2026-07-25
+
+### Fixed
+- **Misleading "Cannot connect to browser on port" error when Chrome is already running (#272)** — if Chrome was already running (but not on a port `nlm login` recognized), the browser we launched would hand off to the existing instance and exit immediately, so the remote-debugging port never bound. The resulting error named a port number that had nothing to do with the actual problem, leaving users chasing the wrong lead. The error now detects this hand-off case and tells you to fully quit Chrome and retry. Thanks to **@argonaut-cm** for the detailed repro with live CDP target output that pinned this down!
+
+### Added
+- **`notebook.cloud.google.com` recognized as a NotebookLM host** — the Workspace/enterprise variant of the "Gemini Notebook" rebrand host added in 0.9.3. Covers login detection and `NOTEBOOKLM_BASE_URL` for Workspace accounts landing on the new cloud domain. Thanks to **@conexaoarteiro** for reporting the rebrand issue on a Workspace account.
+
 ## [0.9.3] - 2026-07-25
 
 ### Fixed
