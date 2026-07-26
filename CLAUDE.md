@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**NotebookLM MCP Server & CLI** - Provides programmatic access to NotebookLM (notebooklm.google.com) via both a Model Context Protocol server and a comprehensive command-line interface.
+**Gemini Notebook (formerly Google NotebookLM) MCP Server & CLI** - Provides programmatic access to Gemini Notebook (notebook.google.com) via both a Model Context Protocol server and a comprehensive command-line interface.
 
 Tested with personal/free tier accounts. May work with Google Workspace accounts but has not been tested.
 
@@ -49,7 +49,7 @@ Extract CSRF token and session ID directly from network request - **no page fetc
 
 ```python
 # 1. Navigate to NotebookLM page
-navigate_page(url="https://notebooklm.google.com/")
+navigate_page(url="https://notebook.google.com/")
 
 # 2. Get a batchexecute request (any NotebookLM API call)
 get_network_request(reqid=<any_batchexecute_request>)
@@ -82,7 +82,7 @@ save_auth_tokens(cookies=<cookie_header>)
 
 ### Resilience: rotated RPC IDs
 
-NotebookLM's internal API uses short RPC "method IDs" (e.g. `wXbhsf`) that Google rotates without notice. When one rotates, calls using the old ID fail. The client now:
+Gemini Notebook's internal API uses short RPC "method IDs" (e.g. `wXbhsf`) that Google rotates without notice. When one rotates, calls using the old ID fail. The client now:
 
 - **Detects drift loudly**: raises `RPCDriftError` (instead of returning silently) when the server responds with **other** `wrb.fr` RPC IDs than the one requested. An empty response still returns silently (no comparison points), so use `--debug` to inspect in that case.
 - **Discovers the new ID**: run with `--debug` to log `RPC IDs in response: [...]` — the new ID for your call appears there.
@@ -200,7 +200,7 @@ src/notebooklm_tools/
 
 ## Features NOT Yet Implemented
 
-None - all NotebookLM features that can be accessed programmatically are implemented.
+None - all Gemini Notebook features that can be accessed programmatically are implemented.
 
 ## Troubleshooting
 
