@@ -810,7 +810,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.3] - 2026-03-08
 
 ### Removed
-- **`nlm setup add claude-desktop` removed** — Claude Desktop users should install via the `.mcpb` extension (download from [Releases](https://github.com/jacob-bd/notebooklm-mcp-cli/releases/latest), double-click to install). The CLI-based config file editing was unreliable compared to the extension approach. `nlm setup add claude-code` (for the Claude Code CLI) is unchanged.
+- **`nlm setup add claude-desktop` removed** — Claude Desktop users should install via the `.mcpb` extension (download from [Releases](https://github.com/jacob-bd/gemini-notebook-mcp-cli/releases/latest), double-click to install). The CLI-based config file editing was unreliable compared to the extension approach. `nlm setup add claude-code` (for the Claude Code CLI) is unchanged.
 
 ## [0.4.2] - 2026-03-08
 

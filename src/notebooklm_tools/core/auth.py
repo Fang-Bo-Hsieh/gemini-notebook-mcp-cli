@@ -141,7 +141,7 @@ def save_tokens_to_cache(tokens: AuthTokens, silent: bool = False) -> None:
 
     Writing to both locations ensures the MCP server and CLI always read
     the same credentials regardless of which code path loads them.
-    See: https://github.com/jacob-bd/notebooklm-mcp-cli/issues/169
+    See: https://github.com/jacob-bd/gemini-notebook-mcp-cli/issues/169
 
     Args:
         tokens: AuthTokens to save

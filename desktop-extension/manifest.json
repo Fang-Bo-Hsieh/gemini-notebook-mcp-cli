@@ -12,11 +12,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jacob-bd/notebooklm-mcp-cli"
+    "url": "https://github.com/jacob-bd/gemini-notebook-mcp-cli"
   },
-  "homepage": "https://github.com/jacob-bd/notebooklm-mcp-cli",
-  "documentation": "https://github.com/jacob-bd/notebooklm-mcp-cli#readme",
-  "support": "https://github.com/jacob-bd/notebooklm-mcp-cli/",
+  "homepage": "https://github.com/jacob-bd/gemini-notebook-mcp-cli",
+  "documentation": "https://github.com/jacob-bd/gemini-notebook-mcp-cli#readme",
+  "support": "https://github.com/jacob-bd/gemini-notebook-mcp-cli/",
   "server": {
     "type": "python",
     "entry_point": "run_server.py",

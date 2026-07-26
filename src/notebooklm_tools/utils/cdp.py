@@ -26,7 +26,7 @@ from httpx import Client, HTTPTransport
 
 # Disable proxy for localhost CDP connections — system proxies (Surge, Clash, etc.)
 # can intercept localhost requests and break Chrome DevTools Protocol connections.
-# See: https://github.com/jacob-bd/notebooklm-mcp-cli/issues/119
+# See: https://github.com/jacob-bd/gemini-notebook-mcp-cli/issues/119
 httpx_client = Client(
     trust_env=False,
     mounts={
@@ -67,7 +67,7 @@ def _normalize_ws_url(url: str | None) -> str | None:
     causing WinError 10013.  Using the explicit IPv4 loopback
     address avoids the ambiguity on all platforms.
 
-    See: https://github.com/jacob-bd/notebooklm-mcp-cli/issues/108
+    See: https://github.com/jacob-bd/gemini-notebook-mcp-cli/issues/108
     """
     if url and "://localhost:" in url:
         url = url.replace("://localhost:", "://127.0.0.1:")

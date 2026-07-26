@@ -14,7 +14,7 @@ For large architectural changes (new auth providers, enterprise support, new cli
 
 ```bash
 # Clone and install
-git clone https://github.com/jacob-bd/notebooklm-mcp-cli.git
+git clone https://github.com/jacob-bd/gemini-notebook-mcp-cli.git
 cd notebooklm-mcp-cli
 uv tool install .
 

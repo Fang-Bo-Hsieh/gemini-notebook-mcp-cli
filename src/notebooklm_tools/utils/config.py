@@ -28,7 +28,7 @@ def safe_mkdir(
     On Python 3.14 + Windows, ``pathlib.mkdir(parents=True, exist_ok=True)``
     can raise ``FileExistsError`` (WinError 183) even when the directory
     already exists.  This wrapper catches that specific failure.
-    See: https://github.com/jacob-bd/notebooklm-mcp-cli/issues/169
+    See: https://github.com/jacob-bd/gemini-notebook-mcp-cli/issues/169
     """
     try:
         path.mkdir(parents=parents, exist_ok=exist_ok, mode=mode)

@@ -6,7 +6,7 @@
 [![PyPI downloads](https://img.shields.io/pypi/dm/notebooklm-mcp-cli)](https://pypistats.org/packages/notebooklm-mcp-cli)
 [![Total downloads](https://static.pepy.tech/badge/notebooklm-mcp-cli)](https://pepy.tech/projects/notebooklm-mcp-cli)
 [![Python](https://img.shields.io/pypi/pyversions/notebooklm-mcp-cli)](https://pypi.org/project/notebooklm-mcp-cli/)
-[![License](https://img.shields.io/pypi/l/notebooklm-mcp-cli)](https://github.com/jacob-bd/notebooklm-mcp-cli/blob/main/LICENSE)
+[![License](https://img.shields.io/pypi/l/notebooklm-mcp-cli)](https://github.com/jacob-bd/gemini-notebook-mcp-cli/blob/main/LICENSE)
 
 **Programmatic access to Gemini Notebook** — via command-line interface (CLI) or Model Context Protocol (MCP) server.
 
@@ -117,7 +117,7 @@ Use at your own risk for personal/experimental purposes.
 
 ## Installation
 
-> 🆕 **Claude Desktop users:** [Download the extension](https://github.com/jacob-bd/notebooklm-mcp-cli/releases/latest) (`.mcpb` file) → double-click → done! One-click install, no config needed.
+> 🆕 **Claude Desktop users:** [Download the extension](https://github.com/jacob-bd/gemini-notebook-mcp-cli/releases/latest) (`.mcpb` file) → double-click → done! One-click install, no config needed.
 
 Install from PyPI. This single package includes **both the CLI and MCP server**:
 
@@ -151,7 +151,7 @@ pipx install notebooklm-mcp-cli
 
 ```bash
 # Clone the repository
-git clone https://github.com/jacob-bd/notebooklm-mcp-cli.git
+git clone https://github.com/jacob-bd/gemini-notebook-mcp-cli.git
 cd notebooklm-mcp
 
 # Install with uv
@@ -600,7 +600,7 @@ Special thanks to:
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=jacob-bd/notebooklm-mcp-cli&type=Date)](https://star-history.com/#jacob-bd/notebooklm-mcp-cli&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=jacob-bd/gemini-notebook-mcp-cli&type=Date)](https://star-history.com/#jacob-bd/gemini-notebook-mcp-cli&Date)
 
 ## License
 

@@ -24,7 +24,7 @@ def make_console(**kwargs) -> "Console":
     Rich also auto-detects the terminal encoding on Windows via ``PYTHONIOENCODING``
     or the system locale — but this ensures we never crash even without that override.
 
-    See: https://github.com/jacob-bd/notebooklm-mcp-cli/issues/105
+    See: https://github.com/jacob-bd/gemini-notebook-mcp-cli/issues/105
     """
     kwargs.setdefault("safe_box", True)
     if sys.platform == "win32":

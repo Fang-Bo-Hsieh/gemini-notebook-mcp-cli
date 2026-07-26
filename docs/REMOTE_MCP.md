@@ -314,7 +314,7 @@ multi-user operation.
 
 These recurring questions informed this guide:
 
-- [Issue #3: Remote and Docker deployment](https://github.com/jacob-bd/notebooklm-mcp-cli/issues/3)
-- [Issue #51: Cookie expiration on Railway](https://github.com/jacob-bd/notebooklm-mcp-cli/issues/51)
-- [Issue #166: Manual cookies on a VPS](https://github.com/jacob-bd/notebooklm-mcp-cli/issues/166)
-- [Issue #179: Authentication on a headless HPC host](https://github.com/jacob-bd/notebooklm-mcp-cli/issues/179)
+- [Issue #3: Remote and Docker deployment](https://github.com/jacob-bd/gemini-notebook-mcp-cli/issues/3)
+- [Issue #51: Cookie expiration on Railway](https://github.com/jacob-bd/gemini-notebook-mcp-cli/issues/51)
+- [Issue #166: Manual cookies on a VPS](https://github.com/jacob-bd/gemini-notebook-mcp-cli/issues/166)
+- [Issue #179: Authentication on a headless HPC host](https://github.com/jacob-bd/gemini-notebook-mcp-cli/issues/179)
