@@ -38,6 +38,9 @@ WINDOWS_CHROME_PATHS = [
     r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
 ]
 
+# In mirrored networking mode, WSL shares the Windows loopback interface.
+MIRRORED_LOOPBACK_IP = "127.0.0.1"
+
 
 def is_wsl() -> bool:
     """Detect if running inside Windows Subsystem for Linux.
@@ -89,7 +92,7 @@ def get_windows_host_ip() -> str | None:
         return None
 
     if _is_mirrored_networking():
-        return "127.0.0.1"
+        return MIRRORED_LOOPBACK_IP
 
     # Method 1: Get default gateway (most reliable for Chrome binding)
     try:
@@ -445,6 +448,7 @@ def check_firewall_rule(port: int = DEFAULT_WSL_CDP_PORT) -> bool:
             capture_output=True,
             text=True,
             errors="replace",
+            timeout=10,
         )
         exists = result.returncode == 0 and result.stdout.strip()
         logger.debug(f"Firewall rule check for port {port}: {exists}")
@@ -488,6 +492,7 @@ def create_firewall_rule(port: int = DEFAULT_WSL_CDP_PORT) -> tuple[bool, str]:
             [str(ps_path), "-Command", ps_cmd],
             capture_output=True,
             text=True,
+            timeout=10,
         )
 
         if result.returncode == 0:
@@ -541,6 +546,7 @@ def remove_firewall_rule(port: int = DEFAULT_WSL_CDP_PORT) -> bool:
             [str(ps_path), "-Command", ps_cmd],
             capture_output=True,
             text=True,
+            timeout=10,
         )
         return result.returncode == 0
     except Exception as e:
@@ -569,10 +575,9 @@ def diagnose_wsl_connectivity(host_ip: str, port: int = DEFAULT_WSL_CDP_PORT) ->
     import socket
 
     try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(5)
-        sock.connect((host_ip, port))
-        sock.close()
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(5)
+            sock.connect((host_ip, port))
         results["tests"]["tcp_connection"] = "PASS"
     except Exception as e:
         results["tests"]["tcp_connection"] = f"FAIL: {e}"
