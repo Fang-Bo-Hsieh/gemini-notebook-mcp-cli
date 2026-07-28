@@ -376,9 +376,13 @@ def login_callback(
                 )
                 console.print("[dim]Chrome binds to localhost; netsh portproxy bridges WSL[/dim]")
 
-                # Check Windows Firewall
-
-                if not check_firewall_rule(wsl_port):
+                # Check Windows Firewall (not needed in mirrored mode —
+                # loopback traffic never crosses the Windows Firewall)
+                if windows_ip == "127.0.0.1":
+                    console.print(
+                        "[dim]Mirrored networking: firewall rule not required (loopback)[/dim]"
+                    )
+                elif not check_firewall_rule(wsl_port):
                     console.print("\n[yellow]Windows Firewall Setup Required[/yellow]")
                     console.print(
                         f"\nA firewall rule is needed to allow WSL to connect to Windows Chrome on port {wsl_port}."
@@ -418,11 +422,22 @@ def login_callback(
 
                 console.print("[dim]Waiting for Chrome DevTools Protocol...[/dim]")
                 if not wait_for_cdp(wsl_cdp_url, timeout=30):
-                    console.print("[red]Error:[/red] Chrome did not start within 30 seconds.")
+                    console.print(
+                        f"[red]Error:[/red] Could not connect to CDP at {wsl_cdp_url} within 30 seconds."
+                    )
                     console.print("\n[yellow]Troubleshooting:[/yellow]")
-                    console.print("  1. Ensure the Windows Firewall rule was created (step above)")
-                    console.print("  2. If Chrome is still running, close it and retry")
-                    console.print("  3. Or use manual mode: nlm login --manual --file <path>")
+                    if windows_ip == "127.0.0.1":
+                        console.print(
+                            "  1. Ensure the netsh portproxy rule is active (netsh interface portproxy show all)"
+                        )
+                        console.print("  2. If Chrome is still running, close it and retry")
+                        console.print("  3. Or use manual mode: nlm login --manual --file <path>")
+                    else:
+                        console.print(
+                            "  1. Ensure the Windows Firewall rule was created (step above)"
+                        )
+                        console.print("  2. If Chrome is still running, close it and retry")
+                        console.print("  3. Or use manual mode: nlm login --manual --file <path>")
                     terminate_windows_chrome(chrome_process)
                     raise typer.Exit(1)
 
