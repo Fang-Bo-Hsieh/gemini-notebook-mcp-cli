@@ -158,14 +158,53 @@ def _github_copilot_config_path() -> Path:
     return Path(".vscode") / "mcp.json"
 
 
+def _claude_desktop_msix_config_path() -> Path | None:
+    """Find the config path used by a Claude Desktop MSIX installation."""
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if not local_app_data:
+        return None
+
+    packages_dir = Path(local_app_data) / "Packages"
+    if not packages_dir.is_dir():
+        return None
+
+    package_dirs = sorted(
+        (
+            path
+            for path in packages_dir.iterdir()
+            if path.is_dir()
+            and (
+                path.name.lower().startswith("claude_")
+                or path.name.lower().startswith("anthropic.claude")
+            )
+        ),
+        key=lambda path: path.name.lower(),
+    )
+    if len(package_dirs) != 1:
+        return None
+
+    return package_dirs[0] / "LocalCache" / "Roaming" / "Claude" / "claude_desktop_config.json"
+
+
 def _claude_desktop_config_path() -> Path:
-    """Get Claude Desktop MCP config path."""
+    """Get the Claude Desktop MCP config path for the current platform."""
     system = platform.system()
     if system == "Darwin":
-        return Path.home() / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json"
+        return (
+            Path.home()
+            / "Library"
+            / "Application Support"
+            / "Claude"
+            / "claude_desktop_config.json"
+        )
     elif system == "Windows":
-        appdata = Path(os.environ.get("APPDATA", ""))
-        return appdata / "Claude" / "claude_desktop_config.json"
+        msix_path = _claude_desktop_msix_config_path()
+        if msix_path:
+            return msix_path
+
+        appdata = os.environ.get("APPDATA")
+        appdata_path = Path(appdata) if appdata else Path.home() / "AppData" / "Roaming"
+        return appdata_path / "Claude" / "claude_desktop_config.json"
     else:
         return Path.home() / ".config" / "Claude" / "claude_desktop_config.json"
 
@@ -294,10 +333,11 @@ def _setup_claude_desktop() -> bool:
     binary_path = _find_mcp_server_path()
     if not binary_path:
         console.print(
-            "[yellow]Warning:[/yellow] notebooklm-mcp not found in PATH, "
-            "using command name instead (may not resolve in Claude Desktop)"
+            "[red]Error:[/red] notebooklm-mcp was not found in PATH. "
+            "Install it first or add its full path to Claude Desktop manually."
         )
-        binary_path = MCP_SERVER_CMD
+        console.print("  Find the installed binary with: [dim]which notebooklm-mcp[/dim]")
+        return False
 
     _add_mcp_server(config, extra={"command": binary_path})
     _write_json_config(config_path, config)

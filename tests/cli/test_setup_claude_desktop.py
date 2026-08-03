@@ -1,6 +1,7 @@
 """Tests for Claude Desktop support in ``nlm setup add/remove/list``."""
 
 import json
+import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -35,7 +36,11 @@ class TestClaudeDesktopConfigPath:
         with patch("platform.system", return_value="Darwin"):
             path = _claude_desktop_config_path()
         assert path == (
-            Path.home() / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json"
+            Path.home()
+            / "Library"
+            / "Application Support"
+            / "Claude"
+            / "claude_desktop_config.json"
         )
 
     def test_windows_path(self):
@@ -44,7 +49,60 @@ class TestClaudeDesktopConfigPath:
             patch.dict("os.environ", {"APPDATA": "C:/Users/test/AppData/Roaming"}),
         ):
             path = _claude_desktop_config_path()
-        assert path == Path("C:/Users/test/AppData/Roaming") / "Claude" / "claude_desktop_config.json"
+        assert (
+            path == Path("C:/Users/test/AppData/Roaming") / "Claude" / "claude_desktop_config.json"
+        )
+
+    def test_windows_path_falls_back_when_appdata_is_missing(self):
+        with (
+            patch("platform.system", return_value="Windows"),
+            patch.dict(os.environ, {}, clear=True),
+        ):
+            path = _claude_desktop_config_path()
+        assert path == Path.home() / "AppData" / "Roaming" / "Claude" / "claude_desktop_config.json"
+
+    def test_windows_path_uses_existing_msix_config(self, tmp_path):
+        local_app_data = tmp_path / "LocalAppData"
+        msix_config = (
+            local_app_data
+            / "Packages"
+            / "Claude_pzs8sxrjxfjjc"
+            / "LocalCache"
+            / "Roaming"
+            / "Claude"
+            / "claude_desktop_config.json"
+        )
+        msix_config.parent.mkdir(parents=True)
+        msix_config.write_text("{}")
+
+        with (
+            patch("platform.system", return_value="Windows"),
+            patch.dict(
+                os.environ,
+                {
+                    "APPDATA": str(tmp_path / "AppData" / "Roaming"),
+                    "LOCALAPPDATA": str(local_app_data),
+                },
+            ),
+        ):
+            path = _claude_desktop_config_path()
+        assert path == msix_config
+
+    def test_windows_path_uses_standard_path_when_msix_install_is_ambiguous(self, tmp_path):
+        local_app_data = tmp_path / "LocalAppData"
+        for package_name in ("Claude_first", "Claude_second"):
+            (local_app_data / "Packages" / package_name).mkdir(parents=True)
+
+        appdata = tmp_path / "AppData" / "Roaming"
+        with (
+            patch("platform.system", return_value="Windows"),
+            patch.dict(
+                os.environ,
+                {"APPDATA": str(appdata), "LOCALAPPDATA": str(local_app_data)},
+            ),
+        ):
+            path = _claude_desktop_config_path()
+        assert path == appdata / "Claude" / "claude_desktop_config.json"
 
     def test_linux_path(self):
         with patch("platform.system", return_value="Linux"):
@@ -76,7 +134,7 @@ class TestSetupClaudeDesktop:
         assert entry["command"] == "/usr/local/bin/notebooklm-mcp"
         assert entry["args"] == []
 
-    def test_falls_back_to_command_name_when_not_on_path(self, tmp_path):
+    def test_returns_false_without_writing_when_binary_is_not_on_path(self, tmp_path):
         config_path = tmp_path / "claude_desktop_config.json"
         with (
             patch(
@@ -90,9 +148,8 @@ class TestSetupClaudeDesktop:
         ):
             result = _setup_claude_desktop()
 
-        assert result is True
-        config = json.loads(config_path.read_text())
-        assert config["mcpServers"]["notebooklm-mcp"]["command"] == MCP_SERVER_CMD
+        assert result is False
+        assert not config_path.exists()
 
     def test_preserves_existing_config_keys(self, tmp_path):
         config_path = tmp_path / "claude_desktop_config.json"

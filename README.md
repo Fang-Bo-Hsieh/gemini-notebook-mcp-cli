@@ -446,6 +446,8 @@ Find your path with: `which notebooklm-mcp`
 | Tool | Config Location |
 |------|-----------------|
 | Claude Desktop | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Claude Desktop (Windows) | `%APPDATA%\Claude\claude_desktop_config.json` (an unambiguous MSIX path is detected automatically) |
+| Claude Desktop (Linux) | `~/.config/Claude/claude_desktop_config.json` |
 | GitHub Copilot | `.vscode/mcp.json` |
 
 </details>
