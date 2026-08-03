@@ -158,6 +158,18 @@ def _github_copilot_config_path() -> Path:
     return Path(".vscode") / "mcp.json"
 
 
+def _claude_desktop_config_path() -> Path:
+    """Get Claude Desktop MCP config path."""
+    system = platform.system()
+    if system == "Darwin":
+        return Path.home() / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json"
+    elif system == "Windows":
+        appdata = Path(os.environ.get("APPDATA", ""))
+        return appdata / "Claude" / "claude_desktop_config.json"
+    else:
+        return Path.home() / ".config" / "Claude" / "claude_desktop_config.json"
+
+
 # =============================================================================
 # Client definitions
 # =============================================================================
@@ -166,6 +178,11 @@ CLIENT_REGISTRY = {
     "claude-code": {
         "name": "Claude Code",
         "description": "Anthropic CLI (claude command)",
+        "has_auto_setup": True,
+    },
+    "claude-desktop": {
+        "name": "Claude Desktop",
+        "description": "Anthropic Claude Desktop app",
         "has_auto_setup": True,
     },
     "gemini": {
@@ -258,6 +275,35 @@ def _setup_claude_code() -> bool:
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError) as e:
         console.print(f"[yellow]Warning:[/yellow] Could not run claude command: {e}")
         return False
+
+
+def _setup_claude_desktop() -> bool:
+    """Add MCP to Claude Desktop config.
+
+    Claude Desktop launches servers without inheriting the user's shell
+    PATH, so the bare command name often fails to resolve. We write the
+    full resolved path to the notebooklm-mcp binary instead.
+    """
+    config_path = _claude_desktop_config_path()
+    config = _read_json_config(config_path)
+
+    if _is_configured(config):
+        console.print("[green]✓[/green] Already configured in Claude Desktop")
+        return True
+
+    binary_path = _find_mcp_server_path()
+    if not binary_path:
+        console.print(
+            "[yellow]Warning:[/yellow] notebooklm-mcp not found in PATH, "
+            "using command name instead (may not resolve in Claude Desktop)"
+        )
+        binary_path = MCP_SERVER_CMD
+
+    _add_mcp_server(config, extra={"command": binary_path})
+    _write_json_config(config_path, config)
+    console.print("[green]✓[/green] Added to Claude Desktop")
+    console.print(f"  [dim]{config_path}[/dim]")
+    return True
 
 
 def _setup_gemini() -> bool:
@@ -479,6 +525,7 @@ def _detect_tool(client_id: str) -> bool:
     _home = Path.home()
     detection: dict[str, tuple[str | None, list[Path]]] = {
         "claude-code": ("claude", [_home / ".claude"]),
+        "claude-desktop": (None, [_claude_desktop_config_path().parent]),
         "gemini": ("gemini", [_gemini_config_path().parent]),
         "cursor": ("cursor", [_home / ".cursor"]),
         "github-copilot": ("code", [_github_copilot_config_path().parent]),
@@ -512,6 +559,9 @@ def _is_already_configured(client_id: str) -> bool:
                 return "notebooklm" in result.stdout.lower()
             return False
 
+        elif client_id == "claude-desktop":
+            config = _read_json_config(_claude_desktop_config_path())
+            return _is_configured(config)
         elif client_id == "gemini":
             config = _read_json_config(_gemini_config_path())
             return _is_configured(config, "notebooklm")
@@ -649,6 +699,7 @@ def _setup_all() -> None:
     console.print()
     setup_fns = {
         "claude-code": _setup_claude_code,
+        "claude-desktop": _setup_claude_desktop,
         "gemini": _setup_gemini,
         "cursor": _setup_cursor,
         "windsurf": _setup_windsurf,
@@ -787,6 +838,7 @@ def setup_add(
 
     Examples:
         nlm setup add claude-code
+        nlm setup add claude-desktop
         nlm setup add gemini
         nlm setup add github-copilot
         nlm setup add cursor
@@ -825,6 +877,7 @@ def setup_add(
 
     setup_fn = {
         "claude-code": _setup_claude_code,
+        "claude-desktop": _setup_claude_desktop,
         "gemini": _setup_gemini,
         "github-copilot": _setup_github_copilot,
         "cursor": _setup_cursor,
@@ -977,6 +1030,7 @@ def _remove_single(client: str) -> bool:
 
     # JSON config-based clients
     config_paths = {
+        "claude-desktop": _claude_desktop_config_path(),
         "gemini": _gemini_config_path(),
         "cursor": _cursor_config_path(),
         "windsurf": _windsurf_config_path(),
@@ -1093,6 +1147,13 @@ def setup_list() -> None:
                 config_path = "claude mcp list"
             else:
                 config_path = "not installed"
+
+        elif client_id == "claude-desktop":
+            path = _claude_desktop_config_path()
+            config = _read_json_config(path)
+            if _is_configured(config):
+                status = "[green]✓[/green]"
+            config_path = str(path).replace(str(Path.home()), "~")
 
         elif client_id == "gemini":
             path = _gemini_config_path()
