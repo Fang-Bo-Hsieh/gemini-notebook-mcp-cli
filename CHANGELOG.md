@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.6] - 2026-08-03
 
 ### Added
-- **Profile-aware Claude Desktop setup** — `nlm setup add/remove claude-desktop` now detects regular and Relay AI/3P profiles on macOS, Windows, and Linux. When both profiles exist, the command prompts for regular, 3P, or both; scripts can use `--profile regular|3p|both`. Missing profiles are never created.
+- **Profile-aware Claude Desktop setup** — `nlm setup add/remove claude-desktop` now detects regular and Relay AI/3P profiles on macOS, Windows, and Linux. When both profiles exist, the command prompts for regular, 3P, or both; scripts can use `--profile regular|3p|both`. Missing profiles are never created. This builds on the original Claude Desktop setup contribution in [PR #275](https://github.com/jacob-bd/gemini-notebook-mcp-cli/pull/275) by **@sanjarcode** — thank you, Sanjar!
 
 ### Changed
 - **Gemini Notebook MCP branding** — New configuration entries use `gemini-notebook-mcp` across supported clients, MCP metadata, the desktop extension, and the packaged skill. The `notebooklm-mcp` executable and `notebooklm-mcp-cli` package names remain unchanged for compatibility. Recognized legacy entries are migrated or removed safely.
