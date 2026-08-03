@@ -144,7 +144,7 @@ pipx install notebooklm-mcp-cli
 
 **After installation, you get:**
 - `nlm` — Command-line interface
-- `notebooklm-mcp` — MCP server for AI assistants
+- `notebooklm-mcp` — Gemini Notebook MCP server for AI assistants
 
 <details>
 <summary>Alternative: Install from Source</summary>
@@ -235,7 +235,7 @@ Your existing cookies should still work, but if you encounter auth issues:
 nlm login
 ```
 
-> **Note:** MCP server configuration (in Claude Code, Cursor, etc.) does not need to change — the executable name `notebooklm-mcp` is the same.
+> **Note:** The configured MCP server name is now `gemini-notebook-mcp`. The executable remains `notebooklm-mcp` for compatibility with existing installations.
 
 ## Getting Started
 
@@ -323,7 +323,7 @@ For detailed instructions and troubleshooting, see **[docs/AUTHENTICATION.md](do
 
 ## MCP Configuration
 
-> **⚠️ Context Window Warning:** This MCP provides **43 tools**. Disable it when not using Gemini Notebook to preserve context. In Claude Code: `@notebooklm-mcp` to toggle. To keep it on but expose only a subset, see [Selective tool exposure](docs/MCP_GUIDE.md#selective-tool-exposure).
+> **⚠️ Context Window Warning:** This MCP provides **43 tools**. Disable it when not using Gemini Notebook to preserve context. In Claude Code: `@gemini-notebook-mcp` to toggle. To keep it on but expose only a subset, see [Selective tool exposure](docs/MCP_GUIDE.md#selective-tool-exposure).
 
 ### Automatic Setup (Recommended)
 
@@ -333,6 +333,7 @@ Use `nlm setup` to automatically configure the MCP server for your AI tools — 
 # Add to any supported tool
 nlm setup add claude-code
 nlm setup add claude-desktop
+nlm setup add claude-desktop --profile 3p  # Relay AI / Claude 3P
 nlm setup add gemini
 nlm setup add github-copilot
 nlm setup add cursor
@@ -348,6 +349,21 @@ nlm setup list
 nlm doctor
 ```
 
+Claude Desktop setup only writes to profiles that are detected as present. If
+both regular and Relay AI/3P profiles exist, the CLI asks whether to configure
+regular, 3P, or both. For scripts, use `--profile regular|3p|both`. If no
+Claude Desktop profile is detected, nothing is created or changed.
+
+Removal uses the same profile selection, for example
+`nlm setup remove claude-desktop --profile regular`.
+Removal only offers detected profiles containing this MCP or a recognized
+legacy entry; unrelated MCP servers are left untouched.
+
+Before adding or removing the MCP, fully quit the selected Claude Desktop
+profile. The CLI detects running regular and Relay AI/3P instances and refuses
+to write while they are open, because Claude may rewrite the config and discard
+the change. Reopen Claude Desktop after setup completes.
+
 ### Install AI Skills (Optional)
 
 Install the Gemini Notebook expert guide for your AI assistant to help it use the tools effectively. Supported for **Cline**, **Antigravity**, **OpenClaw**, **Codex**, **OpenCode**, **Claude Code**, and **Gemini CLI**.
@@ -362,6 +378,10 @@ nlm skill install antigravity
 # Update skills
 nlm skill update
 ```
+
+User-level skill installation requires the target tool to be detected first;
+the CLI will not create a missing tool directory or install anyway. Use
+`--level project` when you intentionally want a project-local skill.
 
 ### Remove from a tool
 
@@ -383,7 +403,7 @@ For tools that use JSON config, point them to uvx:
 ```json
 {
   "mcpServers": {
-    "notebooklm-mcp": {
+    "gemini-notebook-mcp": {
       "command": "uvx",
       "args": ["--from", "notebooklm-mcp-cli", "notebooklm-mcp"]
     }
@@ -398,15 +418,15 @@ For tools that use JSON config, point them to uvx:
 
 **Claude Code / Gemini CLI** support adding MCP servers via their own CLI:
 ```bash
-claude mcp add --scope user notebooklm-mcp notebooklm-mcp
-gemini mcp add --scope user notebooklm-mcp notebooklm-mcp
+claude mcp add --scope user gemini-notebook-mcp notebooklm-mcp
+gemini mcp add --scope user gemini-notebook-mcp notebooklm-mcp
 ```
 
 **Cursor / Windsurf** resolve commands from your `PATH`, so the command name is enough:
 ```json
 {
   "mcpServers": {
-    "notebooklm-mcp": {
+    "gemini-notebook-mcp": {
       "command": "notebooklm-mcp"
     }
   }
@@ -422,7 +442,7 @@ gemini mcp add --scope user notebooklm-mcp notebooklm-mcp
 ```json
 {
   "servers": {
-    "notebooklm-mcp": {
+    "gemini-notebook-mcp": {
       "command": "notebooklm-mcp",
       "args": []
     }
@@ -434,7 +454,7 @@ gemini mcp add --scope user notebooklm-mcp notebooklm-mcp
 ```json
 {
   "mcpServers": {
-    "notebooklm-mcp": {
+    "gemini-notebook-mcp": {
       "command": "/full/path/to/notebooklm-mcp"
     }
   }
@@ -448,7 +468,9 @@ Find your path with: `which notebooklm-mcp`
 | Claude Desktop (macOS current/3P) | `~/Library/Application Support/Claude-3p/claude_desktop_config.json` |
 | Claude Desktop (macOS legacy) | `~/Library/Application Support/Claude/claude_desktop_config.json` |
 | Claude Desktop (Windows) | `%APPDATA%\Claude\claude_desktop_config.json` (an unambiguous MSIX path is detected automatically) |
+| Claude Desktop (Windows 3P) | `%LOCALAPPDATA%\Claude-3p\claude_desktop_config.json` |
 | Claude Desktop (Linux) | `~/.config/Claude/claude_desktop_config.json` |
+| Claude Desktop (Linux 3P) | `${XDG_CONFIG_HOME:-~/.config}/Claude-3p/claude_desktop_config.json` |
 | GitHub Copilot | `.vscode/mcp.json` |
 
 </details>
