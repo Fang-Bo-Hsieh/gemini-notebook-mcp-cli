@@ -32,14 +32,17 @@ class TestClaudeDesktopRegistry:
 class TestClaudeDesktopConfigPath:
     """Verify platform-specific config path resolution."""
 
-    def test_macos_path(self):
-        with patch("platform.system", return_value="Darwin"):
+    def test_macos_path_defaults_to_third_party_profile(self, tmp_path):
+        with (
+            patch("platform.system", return_value="Darwin"),
+            patch("pathlib.Path.home", return_value=tmp_path),
+        ):
             path = _claude_desktop_config_path()
         assert path == (
-            Path.home()
+            tmp_path
             / "Library"
             / "Application Support"
-            / "Claude"
+            / "Claude-3p"
             / "claude_desktop_config.json"
         )
 

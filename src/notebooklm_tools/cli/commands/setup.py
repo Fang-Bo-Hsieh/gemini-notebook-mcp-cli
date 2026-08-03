@@ -190,13 +190,11 @@ def _claude_desktop_config_path() -> Path:
     """Get the Claude Desktop MCP config path for the current platform."""
     system = platform.system()
     if system == "Darwin":
-        return (
-            Path.home()
-            / "Library"
-            / "Application Support"
-            / "Claude"
-            / "claude_desktop_config.json"
-        )
+        app_support = Path.home() / "Library" / "Application Support"
+        # Current Claude Desktop and Relay AI use the third-party profile.
+        # Return it even before the app has created the directory so setup
+        # cannot write a legacy config that Claude will never read.
+        return app_support / "Claude-3p" / "claude_desktop_config.json"
     elif system == "Windows":
         msix_path = _claude_desktop_msix_config_path()
         if msix_path:
