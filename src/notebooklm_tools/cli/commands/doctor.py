@@ -361,6 +361,7 @@ def _check_clients(verbose: bool) -> bool:
 
     from notebooklm_tools.cli.commands.setup import (
         CLIENT_REGISTRY,
+        _claude_desktop_config_path,
         _cursor_config_path,
         _gemini_config_path,
         _is_configured,
@@ -398,6 +399,11 @@ def _check_clients(verbose: bool) -> bool:
                 if verbose:
                     console.print(f"  {info['name']}: [dim]not installed[/dim]")
                 continue
+
+        elif client_id == "claude-desktop":
+            path = _claude_desktop_config_path()
+            config = _read_json_config(path)
+            status = _is_configured(config)
 
         elif client_id == "gemini":
             path = _gemini_config_path()
