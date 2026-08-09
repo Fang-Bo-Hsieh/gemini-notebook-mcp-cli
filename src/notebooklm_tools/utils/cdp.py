@@ -140,14 +140,47 @@ def _get_port_map_file() -> Path:
     return get_storage_dir() / "chrome-port-map.json"
 
 
+def _pid_is_alive(pid: int) -> bool:
+    """Return whether a process is still running on the current platform."""
+    if platform.system() != "Windows":
+        try:
+            os.kill(pid, 0)
+            return True
+        except (OSError, ProcessLookupError):
+            return False
+
+    import ctypes
+    from ctypes import wintypes
+
+    process_query_limited_information = 0x1000
+    still_active = 259
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    kernel32.OpenProcess.restype = wintypes.HANDLE
+    kernel32.GetExitCodeProcess.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
+    kernel32.GetExitCodeProcess.restype = wintypes.BOOL
+    kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+    kernel32.CloseHandle.restype = wintypes.BOOL
+
+    handle = kernel32.OpenProcess(process_query_limited_information, False, pid)
+    if not handle:
+        return False
+
+    try:
+        exit_code = wintypes.DWORD()
+        if not kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+            return True
+        return exit_code.value == still_active
+    finally:
+        kernel32.CloseHandle(handle)
+
+
 def _read_port_map() -> dict[str, dict]:
     """Read the port map, pruning entries whose PIDs are no longer alive.
 
     Returns:
         Dict mapping port (as string key) to {"profile": str, "pid": int}.
     """
-    import os
-
     map_file = _get_port_map_file()
     if not map_file.exists():
         return {}
@@ -163,10 +196,9 @@ def _read_port_map() -> dict[str, dict]:
     for port_str, entry in data.items():
         pid = entry.get("pid")
         if pid is not None:
-            try:
-                os.kill(pid, 0)  # signal 0 = check if process exists
+            if _pid_is_alive(pid):
                 alive[port_str] = entry
-            except (OSError, ProcessLookupError):
+            else:
                 changed = True  # PID is dead, skip it
         else:
             alive[port_str] = entry
@@ -1769,7 +1801,7 @@ def run_headless_auth(
             base_host=base_host,
             extracted_at=time.time(),
         )
-        save_tokens_to_cache(tokens)
+        save_tokens_to_cache(tokens, profile_name=profile_name)
 
         # Clean up cache to minimize profile size
         cleanup_chrome_profile_cache(profile_name)

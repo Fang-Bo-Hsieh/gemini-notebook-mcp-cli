@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.8] - 2026-08-08
+
+### Fixed
+- **Profile-scoped authentication refresh (#284)** — Refreshing or recovering authentication for a named profile no longer overwrites the default profile's cached credentials or falls back to the legacy cache. Client and service auth flows now retain the selected profile throughout token persistence and recovery.
+- **Windows stale CDP process detection (#285)** — CDP port cleanup now uses the Windows process APIs to distinguish live and exited PIDs, preventing stale browser mappings from blocking login while preserving POSIX signal-based checks.
+
 ## [0.9.7] - 2026-08-05
 
 ### Added
