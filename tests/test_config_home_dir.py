@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 from pathlib import Path
 
 from notebooklm_tools.utils import config
@@ -37,3 +38,19 @@ def test_get_home_dir_has_deterministic_cwd_fallback(monkeypatch, tmp_path: Path
     monkeypatch.chdir(tmp_path)
 
     assert config.get_home_dir() == tmp_path / ".notebooklm-home"
+
+
+def test_config_module_reload_survives_missing_os_home(monkeypatch, tmp_path: Path) -> None:
+    with monkeypatch.context() as scoped:
+        scoped.setattr(Path, "home", _raise_missing_home)
+        scoped.setenv("USERPROFILE", str(tmp_path))
+        scoped.delenv("HOME", raising=False)
+        scoped.delenv("NOTEBOOKLM_MCP_CLI_PATH", raising=False)
+
+        reloaded = importlib.reload(config)
+
+        assert reloaded.OLD_CHROME_PROFILES[0].is_relative_to(tmp_path)
+        assert reloaded.OLD_AUTH_LOCATIONS[0].is_relative_to(tmp_path)
+
+    # Restore module-level migration constants for later tests in this process.
+    importlib.reload(config)
