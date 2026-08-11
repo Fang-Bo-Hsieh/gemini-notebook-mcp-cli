@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.9] - 2026-08-11
+
+### Fixed
+- **Windows CDP handoff safety (#289)** — Late CDP listeners are accepted only after their process is verified to own the requested profile, with a bounded grace period for legitimate browser handoff. Thanks to **@insane66613** for the PR.
+- **Home resolution in constrained environments (#288)** — Browser discovery, Snap profile routing, and migration paths now share resilient fallbacks when `Path.home()` is unavailable, honoring the explicit storage location first. Thanks to **@insane66613** for the PR.
+- **WSL non-ASCII Windows paths (#287)** — PowerShell and `wslpath` output now use explicit UTF-8 handling so Windows user/profile paths are preserved across the WSL boundary. Reported by **@etadward**.
+- **Async query result retention (#286)** — Completed and failed query results remain readable until their normal TTL instead of disappearing after the first status request. Reported by **@Joystick01**.
+- **Profile-owned CDP cleanup (#290)** — Externally managed local browsers are closed only after ownership checks, and replacement listeners never have their port mappings cleared. Thanks to **@insane66613** for the PR.
+
 ## [0.9.8] - 2026-08-08
 
 ### Fixed
