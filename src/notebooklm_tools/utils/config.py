@@ -31,12 +31,12 @@ def get_home_dir() -> Path:
     try:
         return Path.home()
     except RuntimeError:
+        if configured := str(os.environ.get("NOTEBOOKLM_MCP_CLI_PATH") or "").strip():
+            return Path(configured).parent
         for name in ("USERPROFILE", "HOME"):
             value = str(os.environ.get(name) or "").strip()
             if value:
                 return Path(value)
-        if configured := str(os.environ.get("NOTEBOOKLM_MCP_CLI_PATH") or "").strip():
-            return Path(configured).parent
         return Path.cwd() / ".notebooklm-home"
 
 
