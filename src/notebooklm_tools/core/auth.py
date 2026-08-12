@@ -456,6 +456,7 @@ class AuthManager:
         force: bool = False,
         build_label: str | None = None,
         base_host: str | None = None,
+        browser_backend: str | None = None,
     ) -> Profile:
         """Save credentials to the current profile.
 
@@ -498,13 +499,15 @@ class AuthManager:
         with f:
             json.dump(cookies, f, indent=2, ensure_ascii=False)
 
-        # Preserve existing email if new email is None
-        if email is None and self.metadata_file.exists():
-            try:
-                existing_metadata = json.loads(self.metadata_file.read_text(encoding="utf-8"))
-                email = existing_metadata.get("email")
-            except Exception:
-                pass
+        preserved_metadata: dict[str, Any] = {}
+        if self.metadata_file.exists():
+            with contextlib.suppress(Exception):
+                preserved_metadata = json.loads(self.metadata_file.read_text(encoding="utf-8"))
+
+        if email is None:
+            email = preserved_metadata.get("email")
+        if browser_backend is None:
+            browser_backend = preserved_metadata.get("browser_backend")
 
         # Save metadata with restrictive permissions from creation
         metadata = {
@@ -513,6 +516,7 @@ class AuthManager:
             "email": email,
             "build_label": build_label,
             "base_host": base_host,
+            "browser_backend": browser_backend,
             "last_validated": datetime.now().isoformat(),
         }
         fd = os.open(str(self.metadata_file), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
