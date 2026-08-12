@@ -595,11 +595,14 @@ class AuthManager:
 
     def login_with_file(self, file_path: str | Path) -> Profile:
         """Parse cookies from file and save to profile."""
+        from urllib.parse import urlparse
+
         from notebooklm_tools.core.exceptions import AuthenticationError
         from notebooklm_tools.utils.browser import (
             parse_cookies_from_file,
             validate_notebooklm_cookies,
         )
+        from notebooklm_tools.utils.config import _ALLOWED_BASE_HOSTS
 
         cookies = parse_cookies_from_file(file_path)
 
@@ -609,7 +612,35 @@ class AuthManager:
                 hint="Make sure the file contains cookies from a NotebookLM session.",
             )
 
-        return self.save_profile(cookies)
+        base_urls = [get_base_url()]
+        if not os.environ.get("NOTEBOOKLM_BASE_URL"):
+            rebrand_url = "https://notebook.google.com"
+            if rebrand_url not in base_urls:
+                base_urls.append(rebrand_url)
+
+        responses = 0
+        for base_url in base_urls:
+            try:
+                response = _fetch_notebooklm_homepage(cookies, base_url=base_url)
+            except Exception as exc:
+                logger.debug("Manual login host probe failed for %s: %s", base_url, exc)
+                continue
+
+            responses += 1
+            final_host = urlparse(str(response.url)).hostname or ""
+            if response.status_code == 200 and final_host in _ALLOWED_BASE_HOSTS:
+                return self.save_profile(cookies, base_host=final_host)
+
+        if responses == 0:
+            raise AuthenticationError(
+                message="Could not reach Gemini Notebook to verify imported cookies",
+                hint="Check your network connection and NOTEBOOKLM_BASE_URL, then try again.",
+            )
+
+        raise AuthenticationError(
+            message="Imported cookies were rejected by Gemini Notebook",
+            hint="Export fresh cookies from an authenticated Gemini Notebook session and try again.",
+        )
 
 
 def get_auth_manager(profile: str | None = None) -> AuthManager:

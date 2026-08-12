@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.10] - 2026-08-11
+
+### Fixed
+- **Manual login host detection (#292)** — `nlm login --manual` now verifies imported cookies against the configured Gemini Notebook host and, for personal accounts, the rebranded `notebook.google.com` host. It persists the host that accepts the session instead of leaving `base_host` empty and incorrectly routing later API calls to the legacy host. Rejected or unverifiable cookies no longer produce a false authentication success. Thanks to **@afonsoft** for the detailed headless reproduction and root-cause follow-up!
+
 ## [0.9.9] - 2026-08-11
 
 ### Fixed
