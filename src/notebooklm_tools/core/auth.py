@@ -466,7 +466,7 @@ class AuthManager:
         """
         from datetime import datetime
 
-        from notebooklm_tools.core.exceptions import AccountMismatchError
+        from notebooklm_tools.core.exceptions import AccountMismatchError, AuthenticationError
 
         # Guard: check for account mismatch before overwriting
         if not force and email and self.metadata_file.exists():
@@ -481,6 +481,12 @@ class AuthManager:
                     )
             except (json.JSONDecodeError, KeyError):
                 pass  # Corrupted metadata, allow overwrite
+
+        if not force and browser_backend == "firefox_profile" and self.profile_exists():
+            raise AuthenticationError(
+                message="Firefox login cannot verify the Google account for an existing profile",
+                hint="Confirm the account, then run 'nlm login --force' to replace the saved credentials.",
+            )
 
         from notebooklm_tools.utils.config import safe_mkdir
 
