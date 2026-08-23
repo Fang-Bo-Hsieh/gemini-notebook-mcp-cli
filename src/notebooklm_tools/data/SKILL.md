@@ -97,6 +97,9 @@ User wants to...
 ├─► Refactor, critique, or improve a draft document
 │   └─► See Workflow 15 in references/workflows.md
 │
+├─► Ground a notebook in bounded public X research
+│   └─► See Workflow 16 in references/workflows.md
+│
 ├─► Ask questions about sources
 │   └─► nlm notebook query <nb-id> "question"
 │       (Use --conversation-id for follow-ups)
