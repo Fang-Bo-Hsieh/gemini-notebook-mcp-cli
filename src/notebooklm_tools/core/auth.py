@@ -726,9 +726,17 @@ def _fetch_notebooklm_homepage(
         headers["Cookie"] = cookie_header
 
     url = base_url or get_base_url()
+    from notebooklm_tools.utils.config import get_enterprise_location
+
+    loc = get_enterprise_location()
+    prefix = ""
+    if "vertexaisearch.cloud.google.com" in url:
+        prefix = f"/notebooklm/{loc}"
+    elif "cloud.google.com" in url:
+        prefix = f"/{loc}"
 
     with httpx.Client(follow_redirects=True, timeout=timeout, headers=headers) as client:
-        return client.get(f"{url}/")
+        return client.get(f"{url}{prefix}/")
 
 
 def check_auth(

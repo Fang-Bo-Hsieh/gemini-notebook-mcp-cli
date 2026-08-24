@@ -305,6 +305,42 @@ nlm login profile delete <profile>   # Delete a profile
 nlm login profile rename <old> <new> # Rename a profile
 ```
 
+### Enterprise Authentication (Gemini Notebook Enterprise)
+
+For organizations using **Gemini Notebook Enterprise** via Google Cloud / Vertex AI Search (`notebooklm.cloud.google.com` or `vertexaisearch.cloud.google.com`):
+
+1. **Set Base URL, GCP Project ID & Location:**
+   ```bash
+   export NOTEBOOKLM_BASE_URL="https://notebooklm.cloud.google.com"
+   # Optional: specify your GCP Project ID or project number
+   export NOTEBOOKLM_PROJECT_ID="your-gcp-project-id"
+   # Optional: specify GCP location/region: global (default), us, eu, etc.
+   export NOTEBOOKLM_LOCATION="global"
+   ```
+
+2. **Save an Enterprise Auth Profile:**
+   You can save an enterprise profile with your extracted cookies:
+   ```bash
+   nlm login --profile enterprise
+   ```
+
+3. **Configure MCP Server with Enterprise Environment Variables:**
+   When adding the MCP server to AI assistants (Claude, Cursor, etc.), pass `NOTEBOOKLM_BASE_URL`, `NOTEBOOKLM_PROJECT_ID`, and optionally `NOTEBOOKLM_LOCATION`:
+   ```json
+   {
+     "mcpServers": {
+       "gemini-notebook-mcp": {
+         "command": "notebooklm-mcp",
+         "env": {
+           "NOTEBOOKLM_BASE_URL": "https://notebooklm.cloud.google.com",
+           "NOTEBOOKLM_PROJECT_ID": "your-gcp-project-id",
+           "NOTEBOOKLM_LOCATION": "global"
+         }
+       }
+     }
+   }
+   ```
+
 Each profile gets its own isolated browser session, so you can be logged into multiple Google accounts simultaneously.
 
 ### Standalone Auth Tool

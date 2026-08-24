@@ -68,6 +68,7 @@ _ALLOWED_BASE_HOSTS = {
     "notebook.google.com",
     "notebooklm.cloud.google.com",
     "notebook.cloud.google.com",
+    "vertexaisearch.cloud.google.com",
 }
 
 
@@ -94,13 +95,27 @@ def get_base_url(profile_host: str | None = None) -> str:
             raise ValueError(
                 f"NOTEBOOKLM_BASE_URL must use https and one of: {_ALLOWED_BASE_HOSTS}. Got: {url}"
             )
-        return url
+        return f"{parsed.scheme}://{parsed.netloc}"
 
     if profile_host and profile_host in _ALLOWED_BASE_HOSTS:
         return f"https://{profile_host}"
 
     url = "https://notebooklm.google.com"
     return url
+
+
+def get_enterprise_project_id() -> str:
+    """Get GCP Project ID for Gemini Notebook Enterprise (from NOTEBOOKLM_PROJECT_ID or default)."""
+    return os.environ.get("NOTEBOOKLM_PROJECT_ID", "").strip()
+
+
+def get_enterprise_location() -> str:
+    """Get GCP Location/Region for Gemini Notebook Enterprise (from NOTEBOOKLM_LOCATION or default 'global').
+
+    Supported locations include: 'global', 'us', 'eu', or specific regions.
+    """
+    loc = os.environ.get("NOTEBOOKLM_LOCATION", "").strip()
+    return loc if loc else "global"
 
 
 def get_default_language() -> str:
