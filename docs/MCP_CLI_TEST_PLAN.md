@@ -100,7 +100,9 @@ nlm notebook query <enterprise-notebook-id> "Summarize the sources" --new-conver
 
 **Expected:** Login opens the configured regional project URL, list returns
 Enterprise notebooks, and the query uses the Enterprise streamed endpoint.
-Do not claim live verification without a redacted request/response capture.
+This test is not complete until it is run against an Enterprise deployment with
+a redacted request/response capture; the automated suite only verifies routing
+and payload contracts.
 
 ---
 

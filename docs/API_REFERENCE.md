@@ -274,10 +274,10 @@ name `projects/{project}/locations/{location}/notebooks/{notebook_id}`:
 ]
 ```
 
-These structures were captured from the Enterprise web client and are covered
-by the Enterprise routing tests. The internal RPC IDs and paths are subject to
-Google-side rotation; use `--debug` and record a redacted network capture when
-updating them.
+These structures are based on a contributor-provided Enterprise web-client
+capture and are covered by the Enterprise routing tests. Live validation still
+requires access to an Enterprise deployment; record a redacted network capture
+when updating them because Google may rotate the internal RPC IDs and paths.
 
 ## Request Format
 
