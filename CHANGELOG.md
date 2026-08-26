@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.15] - 2026-08-26
+
+### Added
+
+- **Generic Chromium-family authentication (#302)** — Authentication now discovers Perplexity Comet on macOS and accepts an explicit Chromium-compatible executable through `auth.browser_path` or `NLM_BROWSER_PATH`, so new browser forks do not require a dedicated release. Invalid explicit paths fail closed instead of silently launching another browser.
+
+### Fixed
+
+- **Reachable generic Studio file exports (#315)** — Studio type `10` is now classified by MIME instead of being assumed to be XLSX. Non-spreadsheet exports appear as `file`, preserve their filename and MIME in status results, and can be downloaded through CLI, MCP, or bulk downloads. Three-field Drive viewer envelopes are resolved through validated HTTPS Google targets, including the observed PDF fallback, while XLSX exports retain their existing route.
+
+### Security
+
+- **Private vulnerability intake (#308)** — Enabled GitHub private vulnerability reporting and notified the reporter that the prepared security review can be submitted privately.
+
+### Verification
+
+- Full non-E2E suite: 1,461 passed, 38 skipped, 1 deselected.
+- Ruff lint and formatting, five-file version alignment, source distribution, and wheel build passed.
+- Forced installed-CLI smoke test reported v0.9.15 and exposed the new `nlm download file` command.
+- Authenticated notebook listing and a read-only Studio-status sweep passed. The saved account contained no existing type-10 fixture, so viewer-envelope download coverage is provided by focused HTTP contract tests rather than a live provider download.
+
 ## [0.9.14] - 2026-08-20
 
 ### Added
