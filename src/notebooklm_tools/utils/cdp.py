@@ -315,6 +315,7 @@ def _macos_browser_candidates() -> list[tuple[str, str]]:
     entries: list[tuple[str, str]] = [
         ("Google Chrome", "Google Chrome.app/Contents/MacOS/Google Chrome"),
         ("Arc", "Arc.app/Contents/MacOS/Arc"),
+        ("Dia", "Dia.app/Contents/MacOS/Dia"),
         ("Brave Browser", "Brave Browser.app/Contents/MacOS/Brave Browser"),
         ("Microsoft Edge", "Microsoft Edge.app/Contents/MacOS/Microsoft Edge"),
         ("Chromium", "Chromium.app/Contents/MacOS/Chromium"),
@@ -386,6 +387,7 @@ _BROWSER_CONFIG_MAP: dict[str, list[str]] = {
     "chrome": ["Google Chrome"],
     "arc": ["Arc"],
     "brave": ["Brave Browser"],
+    "dia": ["Dia"],
     "edge": ["Microsoft Edge"],
     "chromium": ["Chromium"],
     "vivaldi": ["Vivaldi"],
@@ -412,7 +414,7 @@ def _get_chromium_path(preferred: str | None = None) -> str | None:
       falls back to the full priority list if not found.
 
     Set via ``nlm config set auth.browser <name>`` or ``NLM_BROWSER`` env var.
-    Valid names: auto, chrome, arc, brave, edge, chromium, vivaldi, opera.
+    Valid names: auto, chrome, arc, brave, dia, edge, chromium, vivaldi, opera.
     """
     global _detected_browser_name
     if preferred is None:
