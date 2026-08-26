@@ -13,7 +13,7 @@ notebook.google.com. Accounts migrated to the new host need:
 
 import pytest
 
-from notebooklm_tools.utils.config import _ALLOWED_BASE_HOSTS, get_base_url
+from notebooklm_tools.utils.config import _ALLOWED_BASE_HOSTS, get_base_url, get_notebook_url
 
 
 class TestGetBaseUrlPrecedence:
@@ -83,6 +83,7 @@ class TestBaseClientHostRouting:
         from notebooklm_tools.core.client import NotebookLMClient
 
         monkeypatch.setenv("NOTEBOOKLM_BASE_URL", "https://notebooklm.cloud.google.com")
+        monkeypatch.setenv("NOTEBOOKLM_PROJECT_ID", "project-123")
         client = NotebookLMClient(
             cookies={"SID": "x"}, csrf_token="csrf", base_host="notebook.google.com"
         )
@@ -95,6 +96,7 @@ class TestBaseClientHostRouting:
         from notebooklm_tools.core.client import NotebookLMClient
 
         monkeypatch.setenv("NOTEBOOKLM_BASE_URL", "https://vertexaisearch.cloud.google.com")
+        monkeypatch.setenv("NOTEBOOKLM_PROJECT_ID", "project-123")
         client = NotebookLMClient(cookies={"SID": "x"}, csrf_token="csrf")
         try:
             assert client._get_base_url() == "https://vertexaisearch.cloud.google.com"
@@ -116,6 +118,7 @@ class TestBaseClientHostRouting:
 
         monkeypatch.setenv("NOTEBOOKLM_BASE_URL", "https://notebooklm.cloud.google.com")
         monkeypatch.setenv("NOTEBOOKLM_LOCATION", "us")
+        monkeypatch.setenv("NOTEBOOKLM_PROJECT_ID", "project-123")
         client = NotebookLMClient(cookies={"SID": "x"}, csrf_token="csrf")
         try:
             assert client._get_enterprise_location() == "us"
@@ -133,7 +136,9 @@ class TestBaseClientHostRouting:
         from notebooklm_tools.core.client import NotebookLMClient
 
         monkeypatch.setenv("NOTEBOOKLM_BASE_URL", "https://vertexaisearch.cloud.google.com")
-        client = NotebookLMClient(cookies={"SID": "x"}, csrf_token="csrf", location="eu")
+        client = NotebookLMClient(
+            cookies={"SID": "x"}, csrf_token="csrf", location="eu", project_id="project-123"
+        )
         try:
             assert client._get_enterprise_location() == "eu"
             assert client._get_batchexecute_url() == (
@@ -144,3 +149,21 @@ class TestBaseClientHostRouting:
             )
         finally:
             client.close()
+
+    def test_enterprise_requires_project_id(self, monkeypatch):
+        from notebooklm_tools.core.client import NotebookLMClient
+
+        monkeypatch.setenv("NOTEBOOKLM_BASE_URL", "https://notebooklm.cloud.google.com")
+        monkeypatch.delenv("NOTEBOOKLM_PROJECT_ID", raising=False)
+
+        with pytest.raises(ValueError, match="NOTEBOOKLM_PROJECT_ID is required"):
+            NotebookLMClient(cookies={"SID": "x"}, csrf_token="csrf")
+
+    def test_enterprise_notebook_url_includes_location_and_project(self, monkeypatch):
+        monkeypatch.setenv("NOTEBOOKLM_BASE_URL", "https://notebook.cloud.google.com")
+        monkeypatch.setenv("NOTEBOOKLM_LOCATION", "eu")
+        monkeypatch.setenv("NOTEBOOKLM_PROJECT_ID", "project-123")
+
+        assert get_notebook_url("nb/123") == (
+            "https://notebook.cloud.google.com/eu/notebook/nb%2F123?project=project-123"
+        )

@@ -48,14 +48,7 @@ class NotebookMixin(BaseClient):
             loc = getattr(self, "_location", "") or get_enterprise_location()
             project_prefix = f"projects/{project_id}/" if project_id else ""
             params = [f"{project_prefix}locations/{loc}", None, None, 1]
-            try:
-                result = self._call_rpc(rpc_id, params)
-            except Exception as e:
-                logger.debug(
-                    f"Enterprise list notebooks via {rpc_id} failed: {e}, falling back to consumer RPC"
-                )
-                params = [None, 1, None, [2]]
-                result = self._call_rpc(self.RPC_LIST_NOTEBOOKS, params)
+            result = self._call_rpc(rpc_id, params)
         else:
             # [null, 1, null, [2]] - params for list notebooks
             params = [None, 1, None, [2]]

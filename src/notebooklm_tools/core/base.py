@@ -469,6 +469,11 @@ class BaseClient:
         self._profile_name = profile_name
         self._location = location or get_enterprise_location()
         self._enterprise_project_id = project_id or get_enterprise_project_id()
+        if self._is_enterprise() and not self._enterprise_project_id:
+            raise ValueError(
+                "NOTEBOOKLM_PROJECT_ID is required when NOTEBOOKLM_BASE_URL points to "
+                "Gemini Notebook Enterprise."
+            )
         self._created_at: float = _time.time()
 
         # Conversation cache for follow-up queries.

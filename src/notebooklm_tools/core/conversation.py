@@ -423,16 +423,23 @@ class ConversationMixin(BaseClient):
                 conversation_id = str(uuid.uuid4())
                 conversation_history = None
             else:
-                # Try to get the persistent conversation ID from the server first.
-                # This is what makes CLI/MCP chats appear in the web UI's chat history.
-                server_conv_id = self.get_conversation_id(notebook_id, timeout=remaining_timeout())
-                if server_conv_id:
-                    conversation_id = server_conv_id
-                    # Build history from local cache if we have it
-                    conversation_history = self._build_conversation_history(conversation_id)
-                else:
+                # Enterprise's streamed route does not expose the consumer
+                # conversation lookup RPC. Start with a local ID there.
+                if self._is_enterprise():
                     conversation_id = str(uuid.uuid4())
                     conversation_history = None
+                else:
+                    # This is what makes consumer CLI/MCP chats appear in the
+                    # web UI's chat history.
+                    server_conv_id = self.get_conversation_id(
+                        notebook_id, timeout=remaining_timeout()
+                    )
+                    if server_conv_id:
+                        conversation_id = server_conv_id
+                        conversation_history = self._build_conversation_history(conversation_id)
+                    else:
+                        conversation_id = str(uuid.uuid4())
+                        conversation_history = None
         else:
             # Check if we have cached history for this conversation
             assert conversation_id is not None

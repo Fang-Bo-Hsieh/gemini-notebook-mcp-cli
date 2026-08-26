@@ -11,6 +11,7 @@ import os
 import shutil
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote, urlparse
 
 from pydantic import BaseModel, Field
 
@@ -117,6 +118,26 @@ def get_enterprise_location() -> str:
     """
     loc = os.environ.get("NOTEBOOKLM_LOCATION", "").strip()
     return loc if loc else "global"
+
+
+def get_notebook_url(notebook_id: str) -> str:
+    """Build the browser URL for a notebook on the configured host."""
+    base_url = get_base_url()
+    host = (urlparse(base_url).hostname or "").lower()
+    if host not in {
+        "notebooklm.cloud.google.com",
+        "notebook.cloud.google.com",
+        "vertexaisearch.cloud.google.com",
+    }:
+        return f"{base_url}/notebook/{quote(notebook_id, safe='')}"
+
+    location = get_enterprise_location()
+    prefix = (
+        f"/notebooklm/{location}" if host == "vertexaisearch.cloud.google.com" else f"/{location}"
+    )
+    url = f"{base_url}{prefix}/notebook/{quote(notebook_id, safe='')}"
+    project_id = get_enterprise_project_id()
+    return f"{url}?project={quote(project_id, safe='')}" if project_id else url
 
 
 def get_default_language() -> str:
