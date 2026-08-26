@@ -8,7 +8,7 @@ import pytest
 
 from notebooklm_tools.core.base import BaseClient
 from notebooklm_tools.core.download import DownloadMixin
-from notebooklm_tools.core.errors import ArtifactDownloadError
+from notebooklm_tools.core.errors import ArtifactDownloadError, ArtifactParseError
 
 
 class TestDownloadMixinImport:
@@ -157,6 +157,171 @@ class TestDownloadMixinMethods:
             "method": "GET",
             "url": "https://contribution.usercontent.google/download?c=download-token",
         }
+
+    @staticmethod
+    def _generic_file_artifact(metadata: list[str]) -> list:
+        artifact = ["file-1", "analysis.md", 10, None, 3]
+        artifact.extend([None] * 20)
+        artifact[24] = metadata
+        return artifact
+
+    def test_download_file_streams_direct_export_url(self, tmp_path):
+        mixin = DownloadMixin(cookies={"SID": "cookie"}, csrf_token="test")
+        direct_url = "https://contribution.usercontent.google/download?c=file-token"
+        mixin._list_raw = Mock(
+            return_value=[
+                self._generic_file_artifact(
+                    [
+                        "analysis.md",
+                        "text/markdown",
+                        "https://drive.google.com/viewer/upload?ds=viewer-token",
+                        direct_url,
+                    ]
+                )
+            ]
+        )
+        requested_urls: list[str] = []
+
+        class FakeResponse:
+            headers = {"content-length": "8", "content-type": "text/markdown"}
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return None
+
+            def raise_for_status(self):
+                return None
+
+            def iter_bytes(self, chunk_size=65536):
+                yield b"# Answer"
+
+        class FakeClient:
+            def __init__(self, **kwargs):
+                pass
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return None
+
+            def stream(self, method, url):
+                requested_urls.append(url)
+                return FakeResponse()
+
+        output = tmp_path / "analysis.md"
+        with patch("notebooklm_tools.core.download.httpx.Client", FakeClient):
+            result = mixin.download_file("nb-1", str(output), "file-1")
+
+        assert result == str(output)
+        assert output.read_text(encoding="utf-8") == "# Answer"
+        assert requested_urls == [direct_url]
+
+    @pytest.mark.parametrize(
+        ("output_name", "resolved_name"),
+        [("analysis.md", "analysis.pdf"), ("nb_file.bin", "nb_file.pdf")],
+    )
+    def test_download_file_resolves_trusted_viewer_envelope(
+        self, tmp_path, output_name, resolved_name
+    ):
+        mixin = DownloadMixin(cookies={"SID": "cookie"}, csrf_token="test")
+        viewer_url = "https://drive.google.com/viewer/upload?ds=viewer-token"
+        pdf_url = "https://doc-1-apps-viewer.googleusercontent.com/file.pdf"
+        mixin._list_raw = Mock(
+            return_value=[self._generic_file_artifact(["analysis.md", "text/markdown", viewer_url])]
+        )
+        requested_urls: list[str] = []
+
+        class ViewerResponse:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {"pdf": pdf_url, "meta": "redacted"}
+
+        class DownloadResponse:
+            headers = {"content-length": "8", "content-type": "application/pdf"}
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return None
+
+            def raise_for_status(self):
+                return None
+
+            def iter_bytes(self, chunk_size=65536):
+                yield b"%PDF-1.7"
+
+        class FakeClient:
+            def __init__(self, **kwargs):
+                pass
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return None
+
+            def get(self, url):
+                requested_urls.append(url)
+                return ViewerResponse()
+
+            def stream(self, method, url):
+                requested_urls.append(url)
+                return DownloadResponse()
+
+        output = tmp_path / output_name
+        resolved_output = tmp_path / resolved_name
+        with patch("notebooklm_tools.core.download.httpx.Client", FakeClient):
+            result = mixin.download_file("nb-1", str(output), "file-1")
+
+        assert result == str(resolved_output)
+        assert resolved_output.read_bytes() == b"%PDF-1.7"
+        assert not output.exists()
+        assert requested_urls == [viewer_url, pdf_url]
+
+    def test_download_file_rejects_untrusted_viewer_target(self, tmp_path):
+        mixin = DownloadMixin(cookies={"SID": "cookie"}, csrf_token="test")
+        viewer_url = "https://drive.google.com/viewer/upload?ds=viewer-token"
+        mixin._list_raw = Mock(
+            return_value=[self._generic_file_artifact(["analysis.md", "text/markdown", viewer_url])]
+        )
+
+        class ViewerResponse:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {"pdf": "https://evil.example/file.pdf"}
+
+        class FakeClient:
+            def __init__(self, **kwargs):
+                pass
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return None
+
+            def get(self, url):
+                return ViewerResponse()
+
+            def stream(self, method, url):
+                raise AssertionError("untrusted target must not be downloaded")
+
+        output = tmp_path / "analysis.pdf"
+        with (
+            patch("notebooklm_tools.core.download.httpx.Client", FakeClient),
+            pytest.raises(ArtifactParseError, match="trusted Google host"),
+        ):
+            mixin.download_file("nb-1", str(output), "file-1")
+
+        assert not output.exists()
 
     def _download_error(self, status_code: int, final_url: str) -> ArtifactDownloadError:
         request = httpx.Request("GET", final_url)

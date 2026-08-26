@@ -12,6 +12,7 @@ CHROMIUM_BROWSER_KEYS = {
     "arc",
     "brave",
     "dia",
+    "comet",
     "edge",
     "chromium",
     "vivaldi",
@@ -40,7 +41,11 @@ def get_supported_auth_browsers() -> list[str]:
 
 def select_auth_backend(preferred: str | None = None) -> dict[str, str] | None:
     """Pick the best available auth backend for the configured browser."""
-    from notebooklm_tools.utils.cdp import _get_chromium_path, get_browser_display_name
+    from notebooklm_tools.utils.cdp import (
+        _get_chromium_path,
+        _get_preferred_browser_path,
+        get_browser_display_name,
+    )
     from notebooklm_tools.utils.firefox import get_firefox_path
 
     preferred = _normalize_browser(preferred)
@@ -53,6 +58,9 @@ def select_auth_backend(preferred: str | None = None) -> dict[str, str] | None:
     chromium_path = _get_chromium_path(preferred if preferred in CHROMIUM_BROWSER_KEYS else "auto")
     if chromium_path:
         return {"backend": "chromium_cdp", "browser": get_browser_display_name()}
+
+    if _get_preferred_browser_path():
+        return None
 
     if preferred == "auto" and get_firefox_path():
         return {"backend": "firefox_profile", "browser": "Firefox"}

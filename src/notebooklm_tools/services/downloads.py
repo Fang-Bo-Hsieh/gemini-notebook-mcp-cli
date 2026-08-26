@@ -25,6 +25,7 @@ VALID_ARTIFACT_TYPES = (
     "infographic",
     "data_table",
     "data_table_xlsx",
+    "file",
     "quiz",
     "flashcards",
 )
@@ -47,6 +48,7 @@ DEFAULT_EXTENSIONS = {
     "infographic": "png",
     "data_table": "csv",
     "data_table_xlsx": "xlsx",
+    "file": "bin",
     "quiz": "json",  # varies by format
     "flashcards": "json",  # varies by format
 }
@@ -558,11 +560,18 @@ async def download_all(
             continue
 
         download_filename = artifact.get("download_filename")
-        if artifact_type == "data_table_xlsx" and isinstance(download_filename, str):
+        if artifact_type in ("data_table_xlsx", "file") and isinstance(download_filename, str):
             filename = sanitize_filename(Path(download_filename).name, fallback=artifact_type)
-            if not filename.lower().endswith(".xlsx"):
+            if artifact_type == "data_table_xlsx" and not filename.lower().endswith(".xlsx"):
                 filename = f"{filename}.xlsx"
-            stem, ext = filename.rsplit(".", 1)
+            suffix = Path(filename).suffix
+            if suffix:
+                stem = filename[: -len(suffix)]
+                ext = suffix[1:]
+            else:
+                stem = filename
+                ext = get_default_extension(artifact_type, output_format)
+                filename = f"{stem}.{ext}"
         elif artifact_type == "slide_deck":
             ext = slide_deck_format
             stem = sanitize_filename(title, fallback=artifact_type)
@@ -788,6 +797,8 @@ def _dispatch_sync(
         return client.download_mind_map(notebook_id, output_path, artifact_id)
     elif artifact_type in ("data_table", "data_table_xlsx"):
         return client.download_data_table(notebook_id, output_path, artifact_id)
+    elif artifact_type == "file":
+        return client.download_file(notebook_id, output_path, artifact_id)
     else:
         raise ValidationError(
             f"Artifact type '{artifact_type}' requires async download. "
@@ -836,6 +847,10 @@ async def _dispatch_async(
     elif artifact_type in ("data_table", "data_table_xlsx"):
         return await _resolve_download_result(
             client.download_data_table(notebook_id, output_path, artifact_id)
+        )
+    elif artifact_type == "file":
+        return await _resolve_download_result(
+            client.download_file(notebook_id, output_path, artifact_id)
         )
     # Streaming types (async client methods)
     elif artifact_type == "audio":

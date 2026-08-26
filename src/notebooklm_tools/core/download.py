@@ -1093,6 +1093,113 @@ class DownloadMixin(BaseClient):
         except (IndexError, TypeError, AttributeError) as e:
             raise ArtifactParseError("data_table", details=str(e)) from e
 
+    @staticmethod
+    def _is_trusted_file_export_url(url: str) -> bool:
+        """Return whether a Studio file URL is an HTTPS Google endpoint."""
+        parsed = urlparse(url)
+        host = (parsed.hostname or "").lower()
+        return parsed.scheme == "https" and (
+            host == "google.com"
+            or host.endswith(".google.com")
+            or host == "googleusercontent.com"
+            or host.endswith(".googleusercontent.com")
+            or host == "usercontent.google"
+            or host.endswith(".usercontent.google")
+        )
+
+    def _resolve_file_viewer_url(self, viewer_url: str) -> tuple[str, str | None]:
+        """Resolve a Drive viewer JSON envelope to its downloadable target."""
+        if not self._is_trusted_file_export_url(viewer_url):
+            raise ArtifactParseError(
+                "file", details="Viewer URL must use HTTPS on a trusted Google host"
+            )
+
+        base_headers = getattr(
+            self,
+            "_PAGE_FETCH_HEADERS",
+            {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+        )
+        timeout = httpx.Timeout(connect=10.0, read=30.0, write=30.0, pool=30.0)
+        try:
+            with httpx.Client(
+                cookies=self._get_httpx_cookies(),
+                headers=base_headers,
+                follow_redirects=True,
+                timeout=timeout,
+            ) as client:
+                response = client.get(viewer_url)
+                response.raise_for_status()
+                payload = response.json()
+        except (httpx.HTTPError, ValueError, TypeError) as e:
+            raise ArtifactParseError("file", details=f"Invalid viewer response: {e}") from e
+
+        if not isinstance(payload, dict):
+            raise ArtifactParseError("file", details="Viewer response is not a JSON object")
+
+        for format_name in ("pdf", "url", "downloadUrl", "download_url"):
+            target_url = payload.get(format_name)
+            if isinstance(target_url, str) and target_url:
+                if not self._is_trusted_file_export_url(target_url):
+                    raise ArtifactParseError(
+                        "file",
+                        details="Viewer target must use HTTPS on a trusted Google host",
+                    )
+                return target_url, "pdf" if format_name == "pdf" else None
+
+        raise ArtifactParseError("file", details="Viewer response has no downloadable URL")
+
+    def download_file(
+        self,
+        notebook_id: str,
+        output_path: str,
+        artifact_id: str | None = None,
+    ) -> str:
+        """Download a generic type-10 Studio file export."""
+        candidates = [
+            artifact
+            for artifact in self._list_raw(notebook_id)
+            if isinstance(artifact, list)
+            and len(artifact) > 24
+            and artifact[2] == self.STUDIO_TYPE_DATA_TABLE_XLSX
+            and artifact[4] == 3
+        ]
+        if not candidates:
+            raise ArtifactNotReadyError("file")
+
+        target = (
+            next((artifact for artifact in candidates if artifact[0] == artifact_id), None)
+            if artifact_id
+            else candidates[0]
+        )
+        if target is None:
+            raise ArtifactNotReadyError("file", artifact_id)
+
+        metadata = target[24]
+        if not isinstance(metadata, list) or len(metadata) < 3:
+            raise ArtifactParseError("file", details="Invalid file metadata at artifact[24]")
+
+        filename = metadata[0] if isinstance(metadata[0], str) else None
+        direct_url = metadata[3] if len(metadata) > 3 else None
+        resolved_format = None
+        if isinstance(direct_url, str) and direct_url:
+            target_url = direct_url
+            if not self._is_trusted_file_export_url(target_url):
+                raise ArtifactParseError(
+                    "file", details="Download URL must use HTTPS on a trusted Google host"
+                )
+        else:
+            viewer_url = metadata[2]
+            if not isinstance(viewer_url, str) or not viewer_url:
+                raise ArtifactParseError("file", details="File metadata has no viewer URL")
+            target_url, resolved_format = self._resolve_file_viewer_url(viewer_url)
+
+        output = Path(output_path)
+        if resolved_format == "pdf" and (
+            (filename and output.name == filename) or output.suffix.lower() == ".bin"
+        ):
+            output = output.with_suffix(".pdf")
+        return self._download_url_sync(target_url, str(output))
+
     # =========================================================================
     # Interactive Artifact Downloads (Quiz, Flashcards)
     # =========================================================================

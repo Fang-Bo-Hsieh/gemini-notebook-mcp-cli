@@ -84,6 +84,7 @@ class ArtifactInfo(TypedDict, total=False):
     error_reason: str | None
     created_at: str | None
     download_filename: str | None
+    mime_type: str | None
     url: str | None
     custom_instructions: str | None
     visual_style_prompt: str | None
@@ -664,6 +665,9 @@ def get_studio_status(
             else "unknown",
             "download_filename": raw_artifact.get("download_filename")
             if isinstance(raw_artifact.get("download_filename"), str)
+            else None,
+            "mime_type": raw_artifact.get("mime_type")
+            if isinstance(raw_artifact.get("mime_type"), str)
             else None,
             # Surface a failure signal so callers stop polling and act. The raw
             # gRPC payload carries no error string, so prefer any real key if a

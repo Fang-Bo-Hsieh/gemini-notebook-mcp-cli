@@ -471,6 +471,18 @@ def download_data_table(
     _simple_download(notebook_id, "data_table", output, artifact_id, "table.csv")
 
 
+@app.command("file")
+def download_file(
+    notebook_id: str = typer.Argument(..., help="Notebook ID"),
+    output: str | None = typer.Option(
+        None, "--output", "-o", help="Output path (default: ./{notebook_id}_file.bin)"
+    ),
+    artifact_id: str | None = typer.Option(None, "--id", help="Specific artifact ID"),
+):
+    """Download a generic Studio file export."""
+    _simple_download(notebook_id, "file", output, artifact_id, "file.bin")
+
+
 # --- Interactive format downloads (quiz/flashcards) ---
 
 

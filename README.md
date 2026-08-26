@@ -325,9 +325,9 @@ nlm login              # Auto mode (launches browser)
 nlm login --manual     # Manual file mode
 ```
 
-**How it works:** Auto mode launches a dedicated browser profile (supports Chrome, Arc, Dia, Brave, Edge, Chromium, Firefox, and more), you log in to Google, and cookies are extracted automatically. Your login persists for future auth refreshes.
+**How it works:** Auto mode launches a dedicated browser profile (supports Chrome, Arc, Dia, Comet, Brave, Edge, Chromium, Firefox, and more), you log in to Google, and cookies are extracted automatically. Your login persists for future auth refreshes.
 
-**Prefer a specific browser?** Set it with `nlm config set auth.browser chromium` (or `brave`, `arc`, `edge`, `chrome`, `firefox`, etc.). Falls back to auto-detection if the preferred browser is not found. When Chromium/CDP is unavailable, `auto` can fall back to Firefox.
+**Prefer a specific browser?** Set it with `nlm config set auth.browser chromium` (or `comet`, `dia`, `brave`, `arc`, `edge`, `chrome`, `firefox`, etc.). Falls back to auto-detection if the preferred named browser is not found. For any other Chromium-compatible browser, set its executable with `nlm config set auth.browser_path /path/to/browser` or `NLM_BROWSER_PATH`; an invalid explicit path fails closed instead of launching a different browser. When Chromium/CDP is unavailable, `auto` can fall back to Firefox.
 
 For detailed instructions and troubleshooting, see **[docs/AUTHENTICATION.md](docs/AUTHENTICATION.md)**.
 

@@ -349,6 +349,33 @@ class TestStudioMixinMethods:
 
         assert result[0]["type"] == "data_table_xlsx"
         assert result[0]["download_filename"] == "sawn-lumber-design.xlsx"
+        assert result[0]["mime_type"] == (
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+    def test_poll_studio_status_classifies_non_xlsx_type_10_as_file(self):
+        """A type-10 Markdown export must not be routed through the XLSX downloader."""
+        mixin = StudioMixin(cookies={"test": "cookie"}, csrf_token="test")
+        raw_artifact = [
+            "file-1",
+            "analysis.md",
+            10,
+            [["source-1"]],
+            3,
+        ]
+        raw_artifact.extend([None] * 20)
+        raw_artifact[24] = [
+            "analysis.md",
+            "text/markdown",
+            "https://drive.google.com/viewer/upload?ds=viewer-token",
+        ]
+        mixin._call_rpc = MagicMock(return_value=[[raw_artifact]])
+
+        result = mixin.poll_studio_status("nb-1")
+
+        assert result[0]["type"] == "file"
+        assert result[0]["download_filename"] == "analysis.md"
+        assert result[0]["mime_type"] == "text/markdown"
 
     def test_create_audio_overview_uses_normalized_status_mapping(self):
         mixin = StudioMixin(cookies={"test": "cookie"}, csrf_token="test")

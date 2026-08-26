@@ -159,7 +159,7 @@ nlm login profile delete <name>     # Delete a profile
 nlm login profile rename <old> <new> # Rename a profile
 ````
 
-**Multi-Profile Support**: Each profile gets its own isolated browser session (supports Chrome, Arc, Dia, Brave, Edge, Chromium, Firefox, and more), so you can be logged into multiple Google accounts simultaneously.
+**Multi-Profile Support**: Each profile gets its own isolated browser session (supports Chrome, Arc, Dia, Comet, Brave, Edge, Chromium, Firefox, and more), so you can be logged into multiple Google accounts simultaneously.
 
 **Auth status:** `configured` means usable; `stale` means run `nlm login`;
 `not_configured` means first-time setup is required; `unverified` means the
@@ -485,6 +485,7 @@ nlm video list <nb-id> --json                      # List videos only
 nlm download audio <nb-id> --output podcast.mp3
 nlm download video <nb-id> --output video.mp4
 nlm download report <nb-id> --output report.md
+nlm download file <nb-id> --id <artifact-id> --output export.bin  # Generic type-10 file export
 nlm download slide-deck <nb-id> --output slides.pdf           # PDF (default)
 nlm download slide-deck <nb-id> --output slides.pptx --format pptx  # PPTX
 nlm download quiz <nb-id> --output quiz.html --format html    # Also: json, markdown
@@ -672,7 +673,8 @@ nlm login switch work                        # Switch default profile
 | `output.format`        | `table`   | Default output format (table, json)                                                             |
 | `output.color`         | `true`    | Enable colored output                                                                           |
 | `output.short_ids`     | `true`    | Show shortened IDs                                                                              |
-| `auth.browser`         | `auto`    | Preferred browser for login (auto, chrome, arc, brave, edge, chromium, firefox, vivaldi, opera) |
+| `auth.browser`         | `auto`    | Preferred browser for login (auto, chrome, arc, dia, comet, brave, edge, chromium, firefox, vivaldi, opera) |
+| `auth.browser_path`    | empty     | Explicit Chromium-compatible executable; overrides discovery (`NLM_BROWSER_PATH` also supported) |
 | `auth.default_profile` | `default` | Profile to use when `--profile` not specified                                                   |
 
 ### Diagnostics & Setup
