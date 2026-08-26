@@ -24,6 +24,7 @@ VALID_ARTIFACT_TYPES = (
     "slide_deck",
     "infographic",
     "data_table",
+    "data_table_xlsx",
     "quiz",
     "flashcards",
 )
@@ -45,6 +46,7 @@ DEFAULT_EXTENSIONS = {
     "slide_deck": "pdf",
     "infographic": "png",
     "data_table": "csv",
+    "data_table_xlsx": "xlsx",
     "quiz": "json",  # varies by format
     "flashcards": "json",  # varies by format
 }
@@ -236,7 +238,7 @@ def download_sync(
 ) -> DownloadResult:
     """Download a non-streaming artifact synchronously.
 
-    For: report, mind_map, data_table, quiz, flashcards.
+    For: report, mind_map, data_table, data_table_xlsx, quiz, flashcards.
 
     Args:
         client: Authenticated NotebookLM client
@@ -555,12 +557,20 @@ async def download_all(
             )
             continue
 
-        if artifact_type == "slide_deck":
+        download_filename = artifact.get("download_filename")
+        if artifact_type == "data_table_xlsx" and isinstance(download_filename, str):
+            filename = sanitize_filename(Path(download_filename).name, fallback=artifact_type)
+            if not filename.lower().endswith(".xlsx"):
+                filename = f"{filename}.xlsx"
+            stem, ext = filename.rsplit(".", 1)
+        elif artifact_type == "slide_deck":
             ext = slide_deck_format
+            stem = sanitize_filename(title, fallback=artifact_type)
+            filename = f"{stem}.{ext}"
         else:
             ext = get_default_extension(artifact_type, output_format)
-        stem = sanitize_filename(title, fallback=artifact_type)
-        filename = f"{stem}.{ext}"
+            stem = sanitize_filename(title, fallback=artifact_type)
+            filename = f"{stem}.{ext}"
         counter = 2
         while filename.lower() in used_names:
             filename = f"{stem}_{counter}.{ext}"
@@ -776,7 +786,7 @@ def _dispatch_sync(
         return client.download_report(notebook_id, output_path, artifact_id)
     elif artifact_type == "mind_map":
         return client.download_mind_map(notebook_id, output_path, artifact_id)
-    elif artifact_type == "data_table":
+    elif artifact_type in ("data_table", "data_table_xlsx"):
         return client.download_data_table(notebook_id, output_path, artifact_id)
     else:
         raise ValidationError(
@@ -823,7 +833,7 @@ async def _dispatch_async(
         return await _resolve_download_result(
             client.download_mind_map(notebook_id, output_path, artifact_id)
         )
-    elif artifact_type == "data_table":
+    elif artifact_type in ("data_table", "data_table_xlsx"):
         return await _resolve_download_result(
             client.download_data_table(notebook_id, output_path, artifact_id)
         )

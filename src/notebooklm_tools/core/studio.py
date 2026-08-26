@@ -420,6 +420,17 @@ class StudioMixin(BaseClient):
                         elif len(slide_deck_options) > 3 and isinstance(slide_deck_options[3], str):
                             slide_deck_url = slide_deck_options[3]
 
+                # XLSX data-table exports expose file metadata at position 24.
+                download_filename = None
+                if type_code == self.STUDIO_TYPE_DATA_TABLE_XLSX and len(artifact_data) > 24:
+                    file_metadata = artifact_data[24]
+                    if (
+                        isinstance(file_metadata, list)
+                        and len(file_metadata) > 0
+                        and isinstance(file_metadata[0], str)
+                    ):
+                        download_filename = file_metadata[0]
+
                 # Report artifacts have content at position 7
                 report_content = None
                 if type_code == self.STUDIO_TYPE_REPORT and len(artifact_data) > 7:
@@ -492,6 +503,7 @@ class StudioMixin(BaseClient):
                     self.STUDIO_TYPE_INFOGRAPHIC: "infographic",
                     self.STUDIO_TYPE_SLIDE_DECK: "slide_deck",
                     self.STUDIO_TYPE_DATA_TABLE: "data_table",
+                    self.STUDIO_TYPE_DATA_TABLE_XLSX: "data_table_xlsx",
                 }
                 if is_mind_map:
                     artifact_type = "mind_map"
@@ -561,6 +573,7 @@ class StudioMixin(BaseClient):
                         "video_url": video_url,
                         "infographic_url": infographic_url,
                         "slide_deck_url": slide_deck_url,
+                        "download_filename": download_filename,
                         "report_content": report_content,
                         "flashcard_count": flashcard_count,
                         "duration_seconds": duration_seconds,

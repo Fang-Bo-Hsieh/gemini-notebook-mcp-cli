@@ -89,6 +89,75 @@ class TestDownloadMixinMethods:
             ],
         ]
 
+    @staticmethod
+    def _xlsx_artifact() -> list:
+        artifact = [
+            "xlsx-1",
+            "sawn-lumber-design.xlsx",
+            10,
+            None,
+            3,
+        ]
+        artifact.extend([None] * 20)
+        artifact[24] = [
+            "sawn-lumber-design.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "https://drive.google.com/viewer/upload?ds=viewer-token",
+            "https://contribution.usercontent.google/download?c=download-token",
+        ]
+        return artifact
+
+    def test_download_data_table_streams_xlsx_artifact(self, tmp_path):
+        """Type-10 data tables are downloaded as binary XLSX, not parsed as CSV."""
+        mixin = DownloadMixin(cookies={"SID": "cookie"}, csrf_token="test")
+        mixin._list_raw = Mock(return_value=[self._xlsx_artifact()])
+        captured: dict[str, str] = {}
+
+        class FakeResponse:
+            headers = {
+                "content-length": "7",
+                "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            }
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return None
+
+            def raise_for_status(self):
+                return None
+
+            def iter_bytes(self, chunk_size=65536):
+                yield b"PK\x03\x04"
+                yield b"xlsx"
+
+        class FakeClient:
+            def __init__(self, **kwargs):
+                captured["url"] = ""
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return None
+
+            def stream(self, method, url):
+                captured["method"] = method
+                captured["url"] = url
+                return FakeResponse()
+
+        output = tmp_path / "table.xlsx"
+        with patch("notebooklm_tools.core.download.httpx.Client", FakeClient):
+            result = mixin.download_data_table("nb-1", str(output), "xlsx-1")
+
+        assert result == str(output)
+        assert output.read_bytes() == b"PK\x03\x04xlsx"
+        assert captured == {
+            "method": "GET",
+            "url": "https://contribution.usercontent.google/download?c=download-token",
+        }
+
     def _download_error(self, status_code: int, final_url: str) -> ArtifactDownloadError:
         request = httpx.Request("GET", final_url)
         response = httpx.Response(status_code, request=request)
@@ -210,6 +279,33 @@ class TestDownloadMixinMethods:
         retryable_error = self._download_error(
             404,
             "https://lh3.googleusercontent.com/rd-notebooklm/audio=s512-m140-dv",
+        )
+
+        mixin._list_raw = Mock(
+            side_effect=[
+                [self._audio_artifact(first_url)],
+                [self._audio_artifact(second_url)],
+            ]
+        )
+        mixin._download_url = AsyncMock(side_effect=[retryable_error, "/tmp/audio.m4a"])
+        mixin._AUDIO_DOWNLOAD_RETRY_DELAYS = (0,)
+
+        result = await mixin.download_audio("nb-1", "/tmp/audio.m4a", artifact_id="art-1")
+
+        assert result == "/tmp/audio.m4a"
+        assert mixin._list_raw.call_count == 2
+        mixin._download_url.assert_any_await(first_url, "/tmp/audio.m4a", None)
+        mixin._download_url.assert_any_await(second_url, "/tmp/audio.m4a", None)
+
+    @pytest.mark.asyncio
+    async def test_download_audio_retries_transient_drum_media_404(self):
+        """The current drum.usercontent.google.com redirect is retryable."""
+        mixin = DownloadMixin(cookies={"test": "cookie"}, csrf_token="test")
+        first_url = "https://drum.usercontent.google.com/notebooklm/audio=m140-dv"
+        second_url = "https://drum.usercontent.google.com/notebooklm/audio2=m140-dv"
+        retryable_error = self._download_error(
+            404,
+            "https://drum.usercontent.google.com/rd-notebooklm/audio=s512-m140-dv",
         )
 
         mixin._list_raw = Mock(

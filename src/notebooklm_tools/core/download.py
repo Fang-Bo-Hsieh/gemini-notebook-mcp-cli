@@ -42,7 +42,11 @@ class DownloadMixin(BaseClient):
     """
 
     _AUDIO_DOWNLOAD_RETRY_DELAYS = (5, 10, 20, 30, 45, 60, 60)
-    _GOOGLE_MEDIA_DOWNLOAD_HOSTS = {"lh3.googleusercontent.com", "lh3.google.com"}
+    _GOOGLE_MEDIA_DOWNLOAD_HOSTS = {
+        "drum.usercontent.google.com",
+        "lh3.googleusercontent.com",
+        "lh3.google.com",
+    }
 
     # =========================================================================
     # Core Download Infrastructure
@@ -246,6 +250,58 @@ class DownloadMixin(BaseClient):
                 temp_file.unlink()
             raise ArtifactDownloadError(
                 "file", details=f"Failed to download from {url[:50]}...: {str(e)}"
+            ) from e
+
+    def _download_url_sync(self, url: str, output_path: str) -> str:
+        """Stream a binary artifact URL synchronously to a local file."""
+        output_file = Path(output_path)
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        temp_file = output_file.with_suffix(output_file.suffix + ".tmp")
+
+        base_headers = getattr(
+            self,
+            "_PAGE_FETCH_HEADERS",
+            {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+        )
+        headers = {
+            **base_headers,
+            "Referer": f"{self._get_base_url()}/",
+            "Sec-Fetch-Site": "cross-site",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-User": "?1",
+        }
+        cookies = self._get_httpx_cookies()
+        for domain in (".google.com", ".googleusercontent.com"):
+            cookies.delete("OSID", domain=domain)
+            cookies.delete("__Secure-OSID", domain=domain)
+
+        timeout = httpx.Timeout(connect=10.0, read=30.0, write=30.0, pool=30.0)
+        try:
+            with (
+                httpx.Client(
+                    cookies=cookies, headers=headers, follow_redirects=True, timeout=timeout
+                ) as client,
+                client.stream("GET", url) as response,
+            ):
+                response.raise_for_status()
+                with open(temp_file, "wb") as output:
+                    for chunk in response.iter_bytes(chunk_size=65536):
+                        output.write(chunk)
+
+            temp_file.rename(output_file)
+            return str(output_file)
+        except httpx.HTTPError as e:
+            if temp_file.exists():
+                temp_file.unlink()
+            raise ArtifactDownloadError(
+                "file", details=f"HTTP error downloading from {url[:50]}...: {e}"
+            ) from e
+        except Exception as e:
+            if temp_file.exists():
+                temp_file.unlink()
+            raise ArtifactDownloadError(
+                "file", details=f"Failed to download from {url[:50]}...: {e}"
             ) from e
 
     def _list_raw(self, notebook_id: str) -> list[Any]:
@@ -969,11 +1025,11 @@ class DownloadMixin(BaseClient):
         output_path: str,
         artifact_id: str | None = None,
     ) -> str:
-        """Download a data table as CSV.
+        """Download a data table as CSV or an XLSX export.
 
         Args:
             notebook_id: The notebook ID.
-            output_path: Path to save the CSV file.
+            output_path: Path to save the CSV or XLSX file.
             artifact_id: Specific artifact ID, or uses first completed data table.
 
         Returns:
@@ -981,11 +1037,14 @@ class DownloadMixin(BaseClient):
         """
         artifacts = self._list_raw(notebook_id)
 
-        # Filter for completed data tables (Type 9, Status 3)
+        # Filter for completed data tables (Type 9) and XLSX exports (Type 10).
         candidates = []
         for a in artifacts:
-            if isinstance(a, list) and len(a) > 18:  # noqa: SIM102
-                if a[2] == self.STUDIO_TYPE_DATA_TABLE and a[4] == 3:
+            if isinstance(a, list) and len(a) > 4:  # noqa: SIM102
+                if (
+                    a[2] in (self.STUDIO_TYPE_DATA_TABLE, self.STUDIO_TYPE_DATA_TABLE_XLSX)
+                    and a[4] == 3
+                ):
                     candidates.append(a)
 
         if not candidates:
@@ -1000,6 +1059,22 @@ class DownloadMixin(BaseClient):
             target = candidates[0]
 
         try:
+            if target[2] == self.STUDIO_TYPE_DATA_TABLE_XLSX:
+                # XLSX exports are already serialized binary files. The URL is
+                # carried in [24] as [filename, mime, viewer_url, download_url].
+                file_metadata = target[24]
+                if (
+                    not isinstance(file_metadata, list)
+                    or len(file_metadata) <= 3
+                    or not isinstance(file_metadata[3], str)
+                    or not file_metadata[3]
+                ):
+                    raise ArtifactParseError(
+                        "data_table",
+                        details="Invalid XLSX download metadata at artifact[24]",
+                    )
+                return self._download_url_sync(file_metadata[3], output_path)
+
             # Data is at index 18
             raw_data = target[18]
             headers, rows = self._parse_data_table(raw_data)

@@ -308,6 +308,48 @@ class TestStudioMixinMethods:
         assert result[0]["type"] == "mind_map"
         assert result[0]["flashcard_count"] is None
 
+    def test_poll_studio_status_classifies_xlsx_data_table_artifact(self):
+        """Studio type 10 is the downloadable XLSX data-table export."""
+        mixin = StudioMixin(cookies={"test": "cookie"}, csrf_token="test")
+        raw_artifact = [
+            "xlsx-1",
+            "sawn-lumber-design.xlsx",
+            10,
+            None,
+            3,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            "cursor",
+            None,
+            None,
+            [
+                "sawn-lumber-design.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "https://drive.google.com/viewer/upload?ds=viewer-token",
+                "https://contribution.usercontent.google/download?c=download-token",
+            ],
+        ]
+        mixin._call_rpc = MagicMock(return_value=[[raw_artifact]])
+
+        result = mixin.poll_studio_status("nb-1")
+
+        assert result[0]["type"] == "data_table_xlsx"
+        assert result[0]["download_filename"] == "sawn-lumber-design.xlsx"
+
     def test_create_audio_overview_uses_normalized_status_mapping(self):
         mixin = StudioMixin(cookies={"test": "cookie"}, csrf_token="test")
         http_client = MagicMock()

@@ -338,6 +338,14 @@ class TestDownloadAsync:
         assert result["path"] == "/tmp/table.csv"
         mock_client.download_data_table.assert_called_once_with("nb-1", "/tmp/dt.csv", None)
 
+    @pytest.mark.asyncio
+    async def test_download_xlsx_data_table_via_async(self, mock_client):
+        """Issue #305: type-10 XLSX exports use the data-table downloader."""
+        result = await download_async(mock_client, "nb-1", "data_table_xlsx", "/tmp/dt.xlsx")
+        assert result["artifact_type"] == "data_table_xlsx"
+        assert result["path"] == "/tmp/table.csv"
+        mock_client.download_data_table.assert_called_once_with("nb-1", "/tmp/dt.xlsx", None)
+
 
 class TestValidateAudioExtension:
     """Test validate_audio_extension — Issue #185."""
@@ -475,6 +483,53 @@ class TestDownloadAll:
         assert paths["mind_map"].endswith("Map.json")
         assert paths["slide_deck"].endswith("Deck.pdf")
         assert (tmp_path / "My Notebook").is_dir()
+
+    @pytest.mark.asyncio
+    async def test_downloads_xlsx_data_table_with_xlsx_extension(
+        self, bulk_client, monkeypatch, tmp_path
+    ):
+        _patch_lookups(
+            monkeypatch,
+            [
+                _artifact(
+                    artifact_id="xlsx-1",
+                    type="data_table_xlsx",
+                    title="Excel Table",
+                    download_filename="sawn-lumber-design.xlsx",
+                )
+            ],
+        )
+
+        result = await download_all(bulk_client, "nb-1", str(tmp_path))
+
+        assert result["downloaded"] == 1
+        assert result["items"][0]["artifact_type"] == "data_table_xlsx"
+        assert result["items"][0]["path"].endswith("sawn-lumber-design.xlsx")
+
+    @pytest.mark.asyncio
+    async def test_deduplicates_duplicate_xlsx_filenames(self, bulk_client, monkeypatch, tmp_path):
+        _patch_lookups(
+            monkeypatch,
+            [
+                _artifact(
+                    artifact_id="xlsx-1",
+                    type="data_table_xlsx",
+                    title="First",
+                    download_filename="same.xlsx",
+                ),
+                _artifact(
+                    artifact_id="xlsx-2",
+                    type="data_table_xlsx",
+                    title="Second",
+                    download_filename="same.xlsx",
+                ),
+            ],
+        )
+
+        result = await download_all(bulk_client, "nb-1", str(tmp_path))
+
+        names = sorted(item["path"].rsplit("/", 1)[-1] for item in result["items"])
+        assert names == ["same.xlsx", "same_2.xlsx"]
 
     @pytest.mark.asyncio
     async def test_skips_non_completed_artifacts(self, bulk_client, monkeypatch, tmp_path):

@@ -35,6 +35,7 @@ def download_artifact(
             - slide_deck: Slide Deck (PDF or PPTX)
             - infographic: Infographic (PNG)
             - data_table: Data Table (CSV)
+            - data_table_xlsx: Data Table Excel export (XLSX)
             - quiz: Quiz (json|markdown|html)
             - flashcards: Flashcards (json|markdown|html)
         output_path: Path to save the file
