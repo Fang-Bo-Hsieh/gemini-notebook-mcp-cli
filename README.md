@@ -10,7 +10,7 @@
 
 **Programmatic access to Gemini Notebook** — via command-line interface (CLI) or Model Context Protocol (MCP) server.
 
-> **Note:** Personal/consumer accounts are tested regularly. Gemini Notebook Enterprise support is experimental and requires a project-qualified regional URL/configuration.
+> **Note:** Personal/consumer accounts are tested regularly. Gemini Notebook Enterprise support is experimental. The documented `notebook.cloud.google.com` host has been live-verified with a project-qualified `global` deployment; other Enterprise host variants may require additional validation.
 
 > ☕ **If you find notebooklm-mcp-cli useful, consider [buying me a coffee](https://buymeacoffee.com/jacobbd).**
 > It's free and built in my spare time — but testing every Gemini Notebook feature takes real time and resources. A coffee helps me cover it and keep shipping. Thank you! 🙏
@@ -316,22 +316,28 @@ nlm login profile rename <old> <new> # Rename a profile
 
 ### Enterprise Authentication (Gemini Notebook Enterprise)
 
-For organizations using **Gemini Notebook Enterprise** via Google Cloud (`notebook.cloud.google.com`; older deployments may use `notebooklm.cloud.google.com` or `vertexaisearch.cloud.google.com`):
+For organizations using **Gemini Notebook Enterprise** via Google Cloud, ask your Enterprise administrator for the project ID or number, the deployment location/multi-region, and confirmation that your account has access. The current documented host is `notebook.cloud.google.com`; older deployments may use `notebooklm.cloud.google.com` or `vertexaisearch.cloud.google.com`.
 
 1. **Set Base URL, GCP Project ID & Location:**
    ```bash
    export NOTEBOOKLM_BASE_URL="https://notebook.cloud.google.com"
-   # Required: your GCP project ID or project number
-   export NOTEBOOKLM_PROJECT_ID="your-gcp-project-id"
-   # Optional: GCP location/multi-region: global (default), us, or eu
+   # Required: your GCP project ID or project number from your administrator
+   export NOTEBOOKLM_PROJECT_ID="your-gcp-project-id-or-number"
+   # Optional: GCP location/multi-region from your administrator: global (default), us, or eu
    export NOTEBOOKLM_LOCATION="global"
    ```
 
 2. **Save an Enterprise Auth Profile:**
-   You can save an enterprise profile with your extracted cookies:
+   This opens the configured Enterprise URL in an isolated browser profile. Sign in with your organization account:
    ```bash
    nlm login --profile enterprise
    nlm login switch enterprise
+   ```
+
+   You can switch back to a personal profile at any time:
+   ```bash
+   unset NOTEBOOKLM_BASE_URL NOTEBOOKLM_PROJECT_ID NOTEBOOKLM_LOCATION
+   nlm login switch personal
    ```
 
 3. **Configure MCP Server with Enterprise Environment Variables:**
@@ -342,8 +348,8 @@ For organizations using **Gemini Notebook Enterprise** via Google Cloud (`notebo
        "gemini-notebook-mcp": {
          "command": "notebooklm-mcp",
          "env": {
-           "NOTEBOOKLM_BASE_URL": "https://notebooklm.cloud.google.com",
-           "NOTEBOOKLM_PROJECT_ID": "your-gcp-project-id",
+           "NOTEBOOKLM_BASE_URL": "https://notebook.cloud.google.com",
+           "NOTEBOOKLM_PROJECT_ID": "your-gcp-project-id-or-number",
            "NOTEBOOKLM_LOCATION": "global"
          }
        }
@@ -351,7 +357,7 @@ For organizations using **Gemini Notebook Enterprise** via Google Cloud (`notebo
    }
    ```
 
-Each profile gets its own isolated browser session, so you can be logged into multiple Google accounts simultaneously.
+Each profile gets its own isolated browser session, so you can be logged into multiple Google accounts simultaneously. Enterprise environment variables apply to the current process, so keep them in an Enterprise-only shell or MCP configuration when you also use a personal account.
 
 ### Standalone Auth Tool
 

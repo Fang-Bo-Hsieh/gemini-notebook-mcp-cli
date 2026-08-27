@@ -137,20 +137,20 @@ This means you can stay logged into multiple Google accounts simultaneously with
 
 ## Enterprise / Google Workspace
 
-If your organization uses **Gemini Notebook Enterprise**, use the project- and location-specific host configured by your administrator (normally `notebook.cloud.google.com`). Set the base URL, project, and location before authenticating:
+If your organization uses **Gemini Notebook Enterprise**, ask your Enterprise administrator for the project ID or number, the deployment location/multi-region, and confirmation that your account has access. Use the project- and location-specific host configured by your administrator (normally `notebook.cloud.google.com`). Set the base URL, project, and location before authenticating:
 
 ```bash
 # Set the Enterprise URL and required Cloud resource context
 export NOTEBOOKLM_BASE_URL=https://notebook.cloud.google.com
 export NOTEBOOKLM_PROJECT_ID=your-gcp-project-id-or-number
-export NOTEBOOKLM_LOCATION=global   # or us / eu
+export NOTEBOOKLM_LOCATION=global   # or us / eu, as provided by your administrator
 
 # Then authenticate as usual
 nlm login --profile enterprise
 nlm login switch enterprise     # MCP uses the default profile
 ```
 
-All CLI commands, MCP tools, and internal API calls will use this URL automatically. Enterprise requests require `NOTEBOOKLM_PROJECT_ID`; if the base URL is not set, the default personal URL (`https://notebooklm.google.com`) is used.
+All CLI commands, MCP tools, and internal API calls will use this URL automatically. Enterprise requests require `NOTEBOOKLM_PROJECT_ID`; if the base URL is not set, the default personal URL (`https://notebooklm.google.com`) is used. The Enterprise variables apply to the current process, so use an Enterprise-only shell or MCP configuration when you also use a personal account.
 
 > **Tip:** Add the export to your shell profile (`~/.zshrc`, `~/.bashrc`) so it persists across sessions.
 
